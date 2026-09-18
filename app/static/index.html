@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Custom GitHub</title>
+  <style>
+    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #0d1117; color: #e6edf3; }
+    header { border-bottom: 1px solid #30363d; padding: 18px 28px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:#0d1117; }
+    h1 { font-size: 20px; margin: 0; }
+    .muted { color:#8b949e; }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px; }
+    .hero { display:grid; grid-template-columns: 1.4fr 1fr; gap:20px; margin-bottom:24px; }
+    .panel, .project { border:1px solid #30363d; background:#161b22; border-radius:12px; padding:20px; }
+    .panel h2 { margin-top:0; font-size:18px; }
+    form { display:grid; gap:12px; }
+    input { width:100%; border:1px solid #30363d; background:#0d1117; color:#e6edf3; border-radius:7px; padding:10px 12px; }
+    button { border:1px solid #30363d; border-radius:7px; padding:9px 13px; font-weight:650; cursor:pointer; background:#21262d; color:#e6edf3; }
+    button.primary { background:#238636; border-color:#2ea043; }
+    button.deploy { background:#1f6feb; border-color:#388bfd; }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .projects { display:grid; gap:14px; }
+    .project-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
+    .project h3 { margin:0 0 5px; font-size:18px; }
+    .badge { display:inline-flex; border-radius:999px; padding:4px 9px; border:1px solid #30363d; font-size:12px; font-weight:700; }
+    .green { color:#3fb950; border-color:#238636; background:#0f2d17; }
+    .red { color:#f85149; border-color:#da3633; background:#3d1413; }
+    .yellow { color:#d29922; border-color:#9e6a03; background:#2d220b; }
+    .grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; margin:16px 0; }
+    .metric { background:#0d1117; border:1px solid #21262d; border-radius:8px; padding:12px; min-width:0; }
+    .metric small { display:block; color:#8b949e; margin-bottom:5px; }
+    code { color:#79c0ff; word-break:break-all; }
+    #notice { min-height: 24px; margin:0 0 16px; color:#8b949e; }
+    @media (max-width:800px) { .hero { grid-template-columns:1fr; } .grid { grid-template-columns:1fr 1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Custom GitHub</h1>
+    <div class="muted">Local CI/CD control plane</div>
+  </div>
+  <span class="badge green">LOCAL</span>
+</header>
+<main>
+  <section class="hero">
+    <div class="panel">
+      <h2>Deployment rule</h2>
+      <p>GitHub stores the source. This machine synchronizes it, runs local checks, and only enables <strong>Deploy Latest</strong> when the exact latest commit is green.</p>
+      <p class="muted">Production VPS machines will receive pre-built releases only. They will not run source builds.</p>
+    </div>
+    <div class="panel">
+      <h2>Add repository</h2>
+      <form id="project-form">
+        <input id="name" placeholder="loanhub" required />
+        <input id="github_url" placeholder="https://github.com/owner/repo.git" required />
+        <input id="branch" value="main" placeholder="main" required />
+        <button class="primary" type="submit">Add Repository</button>
+      </form>
+    </div>
+  </section>
+
+  <div id="notice"></div>
+  <section id="projects" class="projects"></section>
+</main>
+<script>
+const $projects = document.getElementById('projects');
+const $notice = document.getElementById('notice');
+
+function shortSha(sha) { return sha ? sha.slice(0, 8) : '—'; }
+function statusBadge(project) {
+  if (!project.latest_run) return '<span class="badge yellow">NOT TESTED</span>';
+  if (project.deployable) return '<span class="badge green">READY TO DEPLOY</span>';
+  if (project.latest_run.status === 'failed') return '<span class="badge red">FAILED</span>';
+  return '<span class="badge yellow">NOT DEPLOYABLE</span>';
+}
+async function api(url, options={}) {
+  const response = await fetch(url, {headers:{'Content-Type':'application/json'}, ...options});
+  let body = {};
+  try { body = await response.json(); } catch (_) {}
+  if (!response.ok) throw new Error(body.detail || `Request failed (${response.status})`);
+  return body;
+}
+function note(message) { $notice.textContent = message; }
+async function refresh() {
+  const projects = await api('/api/projects');
+  if (!projects.length) {
+    $projects.innerHTML = '<div class="panel muted">No repositories registered yet.</div>';
+    return;
+  }
+  $projects.innerHTML = projects.map(p => `
+    <article class="project">
+      <div class="project-head">
+        <div>
+          <h3>${p.name}</h3>
+          <div class="muted">${p.github_url} · ${p.branch}</div>
+        </div>
+        ${statusBadge(p)}
+      </div>
+      <div class="grid">
+        <div class="metric"><small>GitHub latest</small><code>${shortSha(p.latest_sha)}</code></div>
+        <div class="metric"><small>Latest pipeline</small>${p.latest_run ? p.latest_run.status.toUpperCase() : '—'}</div>
+        <div class="metric"><small>Latest green</small><code>${shortSha(p.latest_green_sha)}</code></div>
+        <div class="metric"><small>Deploy latest</small>${p.deployable ? 'ENABLED' : 'BLOCKED'}</div>
+      </div>
+      <div class="actions">
+        <button onclick="syncProject(${p.id}, '${p.name}')">Sync GitHub</button>
+        <button onclick="runPipeline(${p.id}, '${p.name}')">Run Pipeline</button>
+        <button class="deploy" ${p.deployable ? '' : 'disabled'} onclick="deployLatest(${p.id}, '${p.name}')">Deploy Latest</button>
+      </div>
+    </article>
+  `).join('');
+}
+async function syncProject(id, name) {
+  try { note(`Syncing ${name} from GitHub…`); const r = await api(`/api/projects/${id}/sync`, {method:'POST'}); note(`${name} synced at ${shortSha(r.commit_sha)}.`); await refresh(); }
+  catch (e) { note(e.message); }
+}
+async function runPipeline(id, name) {
+  try { note(`Running local pipeline for ${name}…`); const r = await api(`/api/projects/${id}/pipeline`, {method:'POST'}); note(`${name} pipeline ${r.status.toUpperCase()} at ${shortSha(r.commit_sha)}.`); await refresh(); }
+  catch (e) { note(e.message); }
+}
+async function deployLatest(id, name) {
+  try { note(`Approving latest green ${name} release…`); const r = await api(`/api/projects/${id}/deploy-latest`, {method:'POST'}); note(`${name}: ${r.message}`); await refresh(); }
+  catch (e) { note(e.message); }
+}
+document.getElementById('project-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  try {
+    const payload = {name:document.getElementById('name').value, github_url:document.getElementById('github_url').value, branch:document.getElementById('branch').value};
+    await api('/api/projects', {method:'POST', body:JSON.stringify(payload)});
+    event.target.reset(); document.getElementById('branch').value='main'; note(`${payload.name} added.`); await refresh();
+  } catch (e) { note(e.message); }
+});
+refresh().catch(e => note(e.message));
+</script>
+</body>
+</html>

@@ -18,14 +18,15 @@ They receive pre-built, tested Docker images from the local control plane and ac
 4. Build a Docker image tagged to the exact commit SHA.
 5. Mark that exact commit green only when every required step passes.
 6. Register a production VPS and SSH identity path.
-7. Configure the project's Compose service, health URL and resource requirements.
+7. Configure the project's Compose directory/service, health URL and resource requirements.
 8. Enable **Deploy Latest** only when the latest GitHub SHA has a green Docker image and a deployment target.
 9. Check VPS disk, memory, Docker and Compose availability.
 10. Stream the already-built image directly to the VPS over SSH.
-11. Activate it with `docker compose ... up -d --no-build`.
-12. Health-check the application.
-13. Automatically roll back to the previous image if the health check fails.
-14. Keep the current and immediate previous project images while removing older images for that project only.
+11. Generate a tiny Compose override containing only the selected immutable image.
+12. Activate it with `docker compose ... up -d --no-build`.
+13. Health-check the application.
+14. Automatically roll back to the previous image if the health check fails.
+15. Keep the current and immediate previous project images while removing older images for that project only.
 
 ## Implemented
 
@@ -46,12 +47,26 @@ They receive pre-built, tested Docker images from the local control plane and ac
 - One active deployment per VPS.
 - Background deployment execution.
 - Direct `docker save | ssh docker load` image streaming.
-- Docker Compose activation with `--no-build`.
+- Docker Compose activation with a generated override and `--no-build`.
+- Existing production `.env` files remain untouched.
 - Repeated HTTP health verification.
 - Automatic rollback on failed deployment health.
 - Project-scoped Docker image retention.
 - Deployment history and logs.
 - Audit-event history.
+- Local verification script and safety-focused regression tests.
+
+## Verify the local machine first
+
+Before starting the dashboard or connecting any VPS, run:
+
+```bash
+bash scripts/verify-local.sh
+```
+
+This verifies the required local tools, Docker daemon access, Python compilation and the control-plane test suite.
+
+Only continue to production configuration when this command is green.
 
 ## Run locally
 
@@ -84,35 +99,46 @@ The current runner executes repository commands directly on the local PC. A late
 
 ## Production VPS requirements
 
-The current controlled deployment worker expects:
+The controlled deployment worker expects:
 
 - Linux VPS
 - SSH access using a dedicated deployment user/key
 - Docker Engine
 - Docker Compose v2
 - a pre-existing production Compose directory
-- an application service configured with an image variable such as `CUSTOM_GITHUB_IMAGE`
-- no `build:` requirement for that production application service
+- an application Compose file already present there
+- no requirement to build application source on the VPS
 - a health endpoint reachable from the control-plane PC
 
 See [`docs/DEPLOYMENT_CONTRACT.md`](docs/DEPLOYMENT_CONTRACT.md) before connecting a production server.
 
-## Example production Compose service
+## Compose override design
+
+Your existing application Compose configuration can stay intact. Custom GitHub writes only:
+
+```text
+.custom-github.override.yaml
+.custom-github.release
+```
+
+For example, the generated override is equivalent to:
 
 ```yaml
 services:
   app:
-    image: ${CUSTOM_GITHUB_IMAGE:?CUSTOM_GITHUB_IMAGE is required}
-    restart: unless-stopped
-    mem_limit: 1g
-    cpus: 1.0
+    image: custom-github/loanhub:0123456789ab
 ```
 
-Custom GitHub writes `.custom-github.env` in the configured Compose directory and activates the release with:
+Then the controller activates it with:
 
 ```bash
-docker compose --env-file .custom-github.env -f compose.yaml up -d --no-build app
+docker compose \
+  -f compose.yaml \
+  -f .custom-github.override.yaml \
+  up -d --no-build app
 ```
+
+This means Custom GitHub can change the deployed image without replacing the application's normal `.env` file.
 
 ## Disk-protection policy
 

@@ -254,7 +254,8 @@ def cleanup_project_images(
         "set -eu; "
         f"current={keep_current}; previous={keep_previous}; "
         f"for image in $(docker image ls {repo_filter} --format '{{{{.Repository}}}}:{{{{.Tag}}}}'); do "
-        "if [ \"$image\" = \"$current\" ] || [ -n \"$previous\" ] && [ \"$image\" = \"$previous\" ]; then continue; fi; "
+        "if [ \"$image\" = \"$current\" ]; then continue; fi; "
+        "if [ -n \"$previous\" ] && [ \"$image\" = \"$previous\" ]; then continue; fi; "
         "docker image rm \"$image\" >/dev/null 2>&1 || true; "
         "done; "
         "echo 'Project image retention complete.'"
@@ -266,9 +267,7 @@ def cleanup_project_images(
 
 
 def remove_failed_image(server: dict[str, Any], image_tag: str) -> None:
-    code, _ = ssh_command(server, f"docker image rm {shlex.quote(image_tag)} >/dev/null 2>&1 || true", timeout=60)
-    if code not in (0,):
-        return
+    ssh_command(server, f"docker image rm {shlex.quote(image_tag)} >/dev/null 2>&1 || true", timeout=60)
 
 
 def execute_rollback(

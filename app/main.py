@@ -55,6 +55,7 @@ def init_db() -> None:
                 project_id INTEGER NOT NULL,
                 commit_sha TEXT NOT NULL,
                 status TEXT NOT NULL,
+                image_tag TEXT,
                 steps_json TEXT NOT NULL,
                 logs TEXT NOT NULL,
                 started_at TEXT NOT NULL,
@@ -66,12 +67,19 @@ def init_db() -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 project_id INTEGER NOT NULL,
                 commit_sha TEXT NOT NULL,
+                image_tag TEXT,
                 status TEXT NOT NULL,
                 created_at TEXT NOT NULL,
                 FOREIGN KEY(project_id) REFERENCES projects(id)
             );
             """
         )
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(pipeline_runs)").fetchall()}
+        if "image_tag" not in columns:
+            connection.execute("ALTER TABLE pipeline_runs ADD COLUMN image_tag TEXT")
+        deployment_columns = {row[1] for row in connection.execute("PRAGMA table_info(deployment_requests)").fetchall()}
+        if "image_tag" not in deployment_columns:
+            connection.execute("ALTER TABLE deployment_requests ADD COLUMN image_tag TEXT")
 
 
 @app.on_event("startup")
@@ -111,9 +119,11 @@ def run(cmd: list[str], cwd: Path, timeout: int = 1800) -> tuple[int, str]:
             env={**os.environ, "CI": "true"},
         )
         return completed.returncode, completed.stdout
+    except FileNotFoundError:
+        return 127, f"Required executable not found: {cmd[0]}"
     except subprocess.TimeoutExpired as exc:
-        output = (exc.stdout or "") + "\nCommand timed out."
-        return 124, output
+        stdout = exc.stdout.decode() if isinstance(exc.stdout, bytes) else (exc.stdout or "")
+        return 124, stdout + "\nCommand timed out."
 
 
 def git_sha(path: Path) -> str:
@@ -156,15 +166,16 @@ def sync_project(project: sqlite3.Row) -> str:
     return sha
 
 
-def detect_pipeline(path: Path) -> list[tuple[str, list[str]]]:
+def detect_pipeline(path: Path, image_tag: str) -> list[tuple[str, list[str]]]:
     steps: list[tuple[str, list[str]]] = []
 
     if (path / "package-lock.json").exists():
         steps.append(("npm install", ["npm", "ci"]))
-        steps.append(("npm test", ["npm", "test", "--", "--if-present"]))
+        steps.append(("npm test", ["npm", "test", "--if-present"]))
         steps.append(("npm build", ["npm", "run", "build", "--if-present"]))
     elif (path / "package.json").exists():
-        steps.append(("npm install", ["npm", "install", "--ignore-scripts"]))
+        steps.append(("npm install", ["npm", "install"]))
+        steps.append(("npm test", ["npm", "test", "--if-present"]))
         steps.append(("npm build", ["npm", "run", "build", "--if-present"]))
 
     if (path / "pyproject.toml").exists() or (path / "requirements.txt").exists():
@@ -176,7 +187,7 @@ def detect_pipeline(path: Path) -> list[tuple[str, list[str]]]:
         steps.append(("dotnet test", ["dotnet", "test", "--nologo"]))
 
     if (path / "Dockerfile").exists():
-        steps.append(("docker build", ["docker", "build", "-t", "custom-github-local-build", "."]))
+        steps.append(("docker build", ["docker", "build", "-t", image_tag, "."]))
 
     if not steps:
         steps.append(("repository validation", ["git", "status", "--short"]))
@@ -191,12 +202,13 @@ def run_pipeline(project: sqlite3.Row) -> dict[str, Any]:
         project = project_or_404(project["id"])
 
     commit_sha = git_sha(path)
+    image_tag = f"custom-github/{project['name'].lower()}:{commit_sha[:12]}"
     started = utc_now()
     results: list[dict[str, Any]] = []
     combined_logs: list[str] = []
     overall = "success"
 
-    for label, command in detect_pipeline(path):
+    for label, command in detect_pipeline(path, image_tag):
         code, output = run(command, path)
         results.append({"name": label, "command": command, "exit_code": code, "status": "success" if code == 0 else "failed"})
         combined_logs.append(f"$ {' '.join(command)}\n{output}")
@@ -208,14 +220,14 @@ def run_pipeline(project: sqlite3.Row) -> dict[str, Any]:
     with db() as connection:
         cursor = connection.execute(
             """
-            INSERT INTO pipeline_runs(project_id, commit_sha, status, steps_json, logs, started_at, finished_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO pipeline_runs(project_id, commit_sha, status, image_tag, steps_json, logs, started_at, finished_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (project["id"], commit_sha, overall, json.dumps(results), "\n\n".join(combined_logs), started, finished),
+            (project["id"], commit_sha, overall, image_tag if (path / "Dockerfile").exists() and overall == "success" else None, json.dumps(results), "\n\n".join(combined_logs), started, finished),
         )
         run_id = cursor.lastrowid
 
-    return {"id": run_id, "project_id": project["id"], "commit_sha": commit_sha, "status": overall, "steps": results, "started_at": started, "finished_at": finished}
+    return {"id": run_id, "project_id": project["id"], "commit_sha": commit_sha, "status": overall, "image_tag": image_tag if (path / "Dockerfile").exists() and overall == "success" else None, "steps": results, "started_at": started, "finished_at": finished}
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -319,8 +331,8 @@ def deploy_latest(project_id: int) -> dict[str, Any]:
         if not green:
             raise HTTPException(status_code=409, detail="Latest commit is not green. Deployment blocked.")
         cursor = connection.execute(
-            "INSERT INTO deployment_requests(project_id, commit_sha, status, created_at) VALUES (?, ?, ?, ?)",
-            (project_id, project["latest_sha"], "awaiting-deployment-agent", utc_now()),
+            "INSERT INTO deployment_requests(project_id, commit_sha, image_tag, status, created_at) VALUES (?, ?, ?, ?, ?)",
+            (project_id, project["latest_sha"], green["image_tag"], "awaiting-deployment-agent", utc_now()),
         )
         deployment_id = cursor.lastrowid
 
@@ -328,5 +340,6 @@ def deploy_latest(project_id: int) -> dict[str, Any]:
         "deployment_id": deployment_id,
         "status": "awaiting-deployment-agent",
         "commit_sha": project["latest_sha"],
+        "image_tag": green["image_tag"],
         "message": "Latest green commit approved. The remote VPS deployment agent is the next implementation stage.",
     }

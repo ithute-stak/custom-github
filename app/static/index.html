@@ -3,100 +3,644 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Custom GitHub</title>
+  <meta name="color-scheme" content="light" />
+  <title>Custom GitHub · Control Center</title>
   <style>
-    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color-scheme: dark; }
+    :root {
+      --brand: #285b55;
+      --brand-deep: #123a38;
+      --brand-strong: #173f3b;
+      --brand-soft: #eaf4ef;
+      --brand-soft-2: #f2f8f4;
+      --accent: #d8c56a;
+      --blue: #0b5ea8;
+      --blue-soft: #eaf3fb;
+      --green: #217a4b;
+      --green-soft: #e9f6ef;
+      --orange: #a86107;
+      --orange-soft: #fff5df;
+      --red: #b42332;
+      --red-soft: #fdecef;
+      --ink: #173228;
+      --ink-2: #2f433a;
+      --muted: #6d7d75;
+      --muted-2: #8b9992;
+      --canvas: #f4f7f5;
+      --surface: rgba(255, 255, 255, .95);
+      --surface-solid: #ffffff;
+      --surface-soft: #f7faf8;
+      --border: #dfe7e2;
+      --border-strong: #ccd9d1;
+      --sidebar: #102f2d;
+      --sidebar-2: #173f3b;
+      --sidebar-text: #eaf2ee;
+      --radius: 20px;
+      --shadow-xs: 0 1px 2px rgba(20, 55, 43, .04);
+      --shadow-sm: 0 8px 30px rgba(26, 58, 46, .055), 0 1px 2px rgba(26, 58, 46, .035);
+      --shadow-md: 0 14px 40px rgba(26, 58, 46, .08);
+      --shadow-lg: 0 22px 60px rgba(16, 48, 38, .13);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
     * { box-sizing: border-box; }
-    body { margin:0; background:#0d1117; color:#e6edf3; }
-    header { border-bottom:1px solid #30363d; padding:18px 28px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:20; background:rgba(13,17,23,.96); backdrop-filter:blur(10px); }
-    h1 { font-size:20px; margin:0; } h2 { font-size:18px; } h3 { margin:0 0 5px; }
-    .muted { color:#8b949e; }
-    main { max-width:1240px; margin:0 auto; padding:28px; }
-    .hero { display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:16px; margin-bottom:24px; }
-    .panel,.project,.server { border:1px solid #30363d; background:#161b22; border-radius:12px; padding:18px; }
-    .panel h2 { margin-top:0; }
-    form { display:grid; gap:10px; }
-    input,select { width:100%; border:1px solid #30363d; background:#0d1117; color:#e6edf3; border-radius:7px; padding:10px 12px; }
-    label { font-size:12px; color:#8b949e; display:grid; gap:5px; }
-    button { border:1px solid #30363d; border-radius:7px; padding:9px 13px; font-weight:650; cursor:pointer; background:#21262d; color:#e6edf3; }
-    button.primary { background:#238636; border-color:#2ea043; }
-    button.deploy { background:#1f6feb; border-color:#388bfd; }
-    button:disabled { opacity:.42; cursor:not-allowed; }
-    .actions { display:flex; gap:8px; flex-wrap:wrap; }
-    .projects,.servers { display:grid; gap:14px; }
-    .servers { grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); margin-bottom:26px; }
-    .project-head,.server-head,.section-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
-    .section-head { align-items:center; margin:20px 0 10px; }
-    .badge { display:inline-flex; border-radius:999px; padding:4px 9px; border:1px solid #30363d; font-size:12px; font-weight:700; white-space:nowrap; }
-    .green { color:#3fb950; border-color:#238636; background:#0f2d17; }
-    .red { color:#f85149; border-color:#da3633; background:#3d1413; }
-    .yellow { color:#d29922; border-color:#9e6a03; background:#2d220b; }
-    .blue { color:#79c0ff; border-color:#1f6feb; background:#0b2342; }
-    .grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin:16px 0; }
-    .metric { background:#0d1117; border:1px solid #21262d; border-radius:8px; padding:11px; min-width:0; }
-    .metric small { display:block; color:#8b949e; margin-bottom:5px; }
-    code { color:#79c0ff; word-break:break-all; }
-    #notice { min-height:24px; margin:0 0 16px; color:#8b949e; }
-    details { margin-top:14px; border-top:1px solid #30363d; padding-top:12px; }
-    summary { cursor:pointer; font-weight:650; }
-    .target-form { margin-top:12px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
-    .target-form .wide { grid-column:span 2; }
-    .target-form button { align-self:end; }
-    .deploy-status { margin:10px 0 0; padding:10px 12px; border-radius:8px; border:1px solid #21262d; background:#0d1117; font-size:13px; }
-    .rule { font-size:14px; line-height:1.5; }
-    @media (max-width:950px) { .hero { grid-template-columns:1fr; } .grid { grid-template-columns:1fr 1fr; } .target-form { grid-template-columns:1fr; } .target-form .wide { grid-column:span 1; } }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 93% 2%, rgba(216, 197, 106, .13), transparent 24rem),
+        radial-gradient(circle at 3% 9%, rgba(40, 91, 85, .10), transparent 28rem),
+        linear-gradient(180deg, #f8faf9 0, var(--canvas) 35rem, #f7f9f8 100%);
+      color: var(--ink);
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select { font: inherit; }
+    button, summary { cursor: pointer; }
+    button:disabled { cursor: not-allowed; }
+    a { color: inherit; text-decoration: none; }
+    h1, h2, h3, p { margin-top: 0; }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: .92em;
+      color: var(--blue);
+      word-break: break-all;
+    }
+
+    .app-shell { min-height: 100vh; display: grid; grid-template-columns: 252px minmax(0, 1fr); }
+    .sidebar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 18px 14px;
+      background:
+        radial-gradient(circle at 15% 0%, rgba(255,255,255,.08), transparent 18rem),
+        linear-gradient(180deg, var(--sidebar-2), var(--sidebar));
+      color: var(--sidebar-text);
+      box-shadow: 12px 0 40px rgba(10, 38, 34, .08);
+    }
+    .brand-lockup { display: flex; align-items: center; gap: 11px; padding: 4px 8px 19px; border-bottom: 1px solid rgba(255,255,255,.11); }
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      flex: 0 0 42px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 13px;
+      background: rgba(255,255,255,.10);
+      box-shadow: inset 0 1px rgba(255,255,255,.14);
+    }
+    .brand-mark svg { width: 23px; height: 23px; }
+    .brand-name { font-weight: 850; letter-spacing: -.025em; font-size: 15px; }
+    .brand-sub { margin-top: 2px; color: rgba(234,242,238,.62); font-size: 10px; letter-spacing: .035em; }
+    .nav-label { margin: 23px 10px 8px; color: rgba(234,242,238,.45); font-size: 9px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    .nav { display: grid; gap: 5px; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-height: 42px;
+      padding: 0 11px;
+      border-radius: 11px;
+      color: rgba(234,242,238,.73);
+      font-size: 13px;
+      font-weight: 650;
+      transition: .14s ease;
+    }
+    .nav-item svg { width: 17px; height: 17px; opacity: .78; }
+    .nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+    .nav-item.active { color: #fff; background: rgba(255,255,255,.115); box-shadow: inset 3px 0 var(--accent); }
+    .nav-item.active svg { opacity: 1; }
+    .sidebar-footer { margin-top: auto; padding: 14px 9px 5px; border-top: 1px solid rgba(255,255,255,.1); }
+    .plane-status { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 750; }
+    .live-dot { width: 8px; height: 8px; border-radius: 999px; background: #5bd486; box-shadow: 0 0 0 4px rgba(91,212,134,.12); }
+    .sidebar-note { margin: 8px 0 0; color: rgba(234,242,238,.48); font-size: 10px; line-height: 1.45; }
+
+    .workspace { min-width: 0; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px clamp(18px, 3vw, 38px);
+      border-bottom: 1px solid rgba(220,230,224,.9);
+      background: rgba(249, 251, 250, .90);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 8px 30px rgba(31,62,49,.04);
+    }
+    .topbar-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .mobile-menu { display: none; }
+    .breadcrumb { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; min-width: 0; }
+    .breadcrumb strong { color: var(--ink); font-weight: 800; }
+    .breadcrumb svg { width: 13px; height: 13px; opacity: .5; }
+    .top-actions { display: flex; align-items: center; gap: 9px; }
+    .local-pill, .status-pill, .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+      border-radius: 999px;
+      white-space: nowrap;
+      font-weight: 800;
+    }
+    .local-pill { min-height: 28px; padding: 0 10px; border: 1px solid #d4e5db; background: #f0f8f3; color: #397164; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+    .local-pill::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: var(--green); }
+
+    .stage { width: 100%; max-width: 1680px; margin: 0 auto; padding: 25px clamp(18px, 3vw, 38px) 54px; }
+    .page-heading { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; margin-bottom: 22px; }
+    .eyebrow { min-height: 24px; padding: 0 9px; border: 1px solid #d9e7df; background: var(--brand-soft-2); color: #397164; font-size: 9px; letter-spacing: .09em; text-transform: uppercase; }
+    .page-heading h1 { margin: 10px 0 6px; font-size: clamp(2rem, 3.2vw, 3.1rem); line-height: 1.02; letter-spacing: -.045em; font-weight: 880; }
+    .page-heading p { max-width: 680px; margin-bottom: 0; color: var(--muted); font-size: 13px; line-height: 1.55; }
+    .heading-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; padding-top: 28px; }
+
+    .button {
+      min-height: 39px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 13px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255,255,255,.94);
+      color: var(--ink-2);
+      box-shadow: var(--shadow-xs);
+      font-size: 12px;
+      font-weight: 780;
+      transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease, background .12s ease;
+    }
+    .button svg { width: 15px; height: 15px; }
+    .button:hover:not(:disabled) { transform: translateY(-1px); border-color: #b9cbc1; box-shadow: 0 8px 20px rgba(26,58,46,.08); }
+    .button.primary { color: #fff; border-color: var(--brand-deep); background: linear-gradient(135deg, var(--brand-deep), var(--brand)); box-shadow: 0 9px 20px rgba(18,58,56,.15); }
+    .button.primary:hover:not(:disabled) { box-shadow: 0 12px 24px rgba(18,58,56,.19); }
+    .button.deploy { color: #fff; border-color: #09539a; background: linear-gradient(135deg, #0a579e, #0b6cbc); box-shadow: 0 9px 20px rgba(11,94,168,.16); }
+    .button.deploy:hover:not(:disabled) { box-shadow: 0 12px 26px rgba(11,94,168,.23); }
+    .button:disabled { opacity: .42; filter: saturate(.6); box-shadow: none; }
+    .icon-button { width: 39px; padding: 0; }
+
+    .grid-12 { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 16px; }
+    .col-span-12 { grid-column: span 12 / span 12; }
+    .col-span-6 { grid-column: span 6 / span 6; }
+    .col-span-4 { grid-column: span 4 / span 4; }
+    .col-span-3 { grid-column: span 3 / span 3; }
+
+    .surface {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(8px);
+    }
+    .surface::after {
+      position: absolute;
+      z-index: 0;
+      top: -76px;
+      right: -58px;
+      width: 150px;
+      height: 150px;
+      border: 22px solid rgba(40,91,85,.025);
+      border-radius: 999px;
+      content: "";
+      pointer-events: none;
+    }
+    .surface > * { position: relative; z-index: 1; }
+    .surface-pad { padding: 20px; }
+
+    .safety-banner {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+      padding: 15px 17px;
+      border: 1px solid #d5e5dc;
+      border-radius: 16px;
+      background: linear-gradient(120deg, rgba(255,255,255,.97), rgba(241,248,244,.95));
+      box-shadow: var(--shadow-xs);
+    }
+    .safety-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: var(--brand-soft); color: var(--brand); }
+    .safety-icon svg { width: 19px; height: 19px; }
+    .safety-banner strong { display: block; margin-bottom: 2px; font-size: 12px; }
+    .safety-banner p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+    .safety-code { padding: 6px 9px; border-radius: 8px; background: #edf4f0; color: #4c655a; font-size: 10px; font-family: ui-monospace, monospace; }
+
+    .metric-card { min-height: 116px; padding: 17px 18px; }
+    .metric-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .metric-label { color: var(--muted); font-size: 10px; font-weight: 750; letter-spacing: .055em; text-transform: uppercase; }
+    .metric-icon { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 10px; background: var(--brand-soft-2); color: var(--brand); }
+    .metric-icon svg { width: 16px; height: 16px; }
+    .metric-value { margin: 10px 0 2px; font-size: 1.8rem; line-height: 1; letter-spacing: -.045em; font-weight: 880; }
+    .metric-caption { color: var(--muted-2); font-size: 10px; }
+
+    .section-block { margin-top: 18px; }
+    .section-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; margin-bottom: 11px; }
+    .section-heading h2 { margin: 0; font-size: 16px; letter-spacing: -.025em; font-weight: 850; }
+    .section-heading p { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+    .section-meta { color: var(--muted); font-size: 10px; text-align: right; }
+
+    .projects { display: grid; gap: 14px; }
+    .project { padding: 20px; }
+    .project-head, .server-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .project-title { min-width: 0; }
+    .project-title h3, .server-head h3 { margin: 0; font-size: 15px; letter-spacing: -.02em; font-weight: 850; }
+    .repo-link { margin-top: 4px; color: var(--muted); font-size: 10px; line-height: 1.45; word-break: break-word; }
+    .repo-branch { display: inline-flex; margin-left: 4px; padding: 2px 6px; border: 1px solid var(--border); border-radius: 999px; color: #5f7168; background: var(--surface-soft); font-size: 9px; font-weight: 750; }
+
+    .badge { display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 0 8px; border: 1px solid transparent; border-radius: 999px; font-size: 9px; font-weight: 850; letter-spacing: .04em; white-space: nowrap; }
+    .badge::before { content: ""; width: 6px; height: 6px; border-radius: 999px; background: currentColor; opacity: .75; }
+    .badge.green { color: var(--green); background: var(--green-soft); border-color: #cce7d8; }
+    .badge.red { color: var(--red); background: var(--red-soft); border-color: #f2ccd1; }
+    .badge.yellow { color: var(--orange); background: var(--orange-soft); border-color: #efdfb7; }
+    .badge.blue { color: var(--blue); background: var(--blue-soft); border-color: #cfdfef; }
+
+    .pipeline-strip { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin: 17px 0 13px; }
+    .pipeline-step { position: relative; min-width: 0; padding: 11px 10px 10px 12px; border: 1px solid var(--border); border-radius: 11px; background: #fbfcfb; }
+    .pipeline-step::before { position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px; border-radius: 999px; content: ""; background: #d8e1dc; }
+    .pipeline-step.done::before { background: var(--green); }
+    .pipeline-step.failed::before { background: var(--red); }
+    .pipeline-step.ready::before { background: var(--blue); }
+    .pipeline-step small { display: block; margin-bottom: 5px; color: var(--muted); font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .pipeline-step strong, .pipeline-step code { display: block; overflow: hidden; color: var(--ink-2); font-size: 10px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+    .pipeline-step code { color: var(--blue); }
+
+    .project-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 11px; }
+    .deployment-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 13px; padding: 10px 12px; border: 1px solid #e5ece8; border-radius: 11px; background: #f8faf9; color: var(--muted); font-size: 10px; line-height: 1.5; }
+    .deployment-row svg { width: 14px; height: 14px; flex: 0 0 auto; margin-top: 1px; color: var(--brand); }
+    .deployment-row strong { color: var(--ink-2); }
+
+    details.target { margin-top: 12px; border-top: 1px solid #e5ece8; padding-top: 10px; }
+    details.target summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; list-style: none; color: var(--ink-2); font-size: 11px; font-weight: 800; }
+    details.target summary::-webkit-details-marker { display: none; }
+    details.target summary::after { content: "+"; width: 24px; height: 24px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 8px; color: var(--muted); background: #fff; font-size: 14px; }
+    details.target[open] summary::after { content: "−"; }
+
+    .target-form { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: 13px; padding: 14px; border: 1px solid var(--border); border-radius: 13px; background: #f8faf9; }
+    .target-form .span-2 { grid-column: span 2; }
+    .target-form .span-3 { grid-column: span 3; }
+    .target-form .span-4 { grid-column: span 4; }
+    .target-form .span-6 { grid-column: span 6; }
+
+    label { display: grid; gap: 5px; color: #52665d; font-size: 9px; font-weight: 780; letter-spacing: .025em; }
+    input, select {
+      width: 100%;
+      min-height: 39px;
+      border: 1px solid #d8e2dc;
+      border-radius: 9px;
+      outline: none;
+      background: rgba(255,255,255,.98);
+      color: var(--ink);
+      padding: 0 10px;
+      font-size: 11px;
+      box-shadow: inset 0 1px 1px rgba(23,50,40,.02);
+      transition: border-color .14s ease, box-shadow .14s ease;
+    }
+    input:hover, select:hover { border-color: #b9cbc1; }
+    input:focus, select:focus { border-color: #3e756d; box-shadow: 0 0 0 3px rgba(62,117,109,.10); }
+    input::placeholder { color: #a1ada7; }
+
+    .servers { display: grid; gap: 11px; }
+    .server { padding: 16px; }
+    .server-address { margin-top: 4px; color: var(--muted); font-family: ui-monospace, monospace; font-size: 9px; }
+    .server-limits { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 13px 0; }
+    .limit { padding: 9px 10px; border: 1px solid #e4ebe7; border-radius: 10px; background: #f8faf9; }
+    .limit small { display: block; margin-bottom: 2px; color: var(--muted); font-size: 8px; text-transform: uppercase; letter-spacing: .055em; }
+    .limit strong { font-size: 12px; }
+    .server-key { min-width: 0; margin-bottom: 11px; color: var(--muted); font-size: 9px; line-height: 1.45; word-break: break-word; }
+    .server-metrics { display: grid; gap: 8px; margin: 11px 0; }
+    .meter-head { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 9px; }
+    .meter { height: 6px; overflow: hidden; border-radius: 999px; background: #e6ece8; }
+    .meter > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--brand), #3d8177); }
+    .meter > span.warn { background: linear-gradient(90deg, #c18421, #e0aa46); }
+    .meter > span.danger { background: linear-gradient(90deg, #ae2637, #d7505e); }
+
+    .quick-panel { padding: 17px; }
+    .quick-panel + .quick-panel { margin-top: 12px; }
+    .panel-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .panel-icon { width: 33px; height: 33px; display: grid; place-items: center; border-radius: 10px; background: var(--brand-soft); color: var(--brand); }
+    .panel-icon svg { width: 16px; height: 16px; }
+    .panel-head h3 { margin: 0; font-size: 12px; font-weight: 850; }
+    .panel-head p { margin: 2px 0 0; color: var(--muted); font-size: 9px; }
+    .compact-form { display: grid; gap: 9px; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .compact-form .button { width: 100%; margin-top: 2px; }
+
+    .flow-panel { padding: 17px; }
+    .flow { display: grid; gap: 0; margin-top: 10px; }
+    .flow-item { position: relative; display: grid; grid-template-columns: 28px minmax(0,1fr); gap: 9px; min-height: 48px; }
+    .flow-item:not(:last-child)::after { position: absolute; left: 13px; top: 27px; bottom: 0; width: 1px; content: ""; background: #dbe5df; }
+    .flow-dot { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid #d8e4dd; border-radius: 9px; background: #f7faf8; color: var(--brand); font-size: 9px; font-weight: 850; }
+    .flow-copy strong { display: block; padding-top: 1px; font-size: 10px; }
+    .flow-copy span { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; line-height: 1.4; }
+
+    #notice {
+      display: none;
+      align-items: center;
+      gap: 9px;
+      margin-bottom: 14px;
+      padding: 11px 13px;
+      border: 1px solid #d5e5dc;
+      border-radius: 12px;
+      background: #f3f9f5;
+      color: #365f50;
+      font-size: 10px;
+      font-weight: 650;
+      box-shadow: var(--shadow-xs);
+    }
+    #notice.show { display: flex; }
+    #notice::before { content: ""; width: 7px; height: 7px; flex: 0 0 auto; border-radius: 999px; background: var(--green); }
+
+    .empty-state { min-height: 122px; display: grid; place-items: center; align-content: center; gap: 5px; padding: 22px; border: 1px dashed var(--border-strong); border-radius: 16px; background: rgba(255,255,255,.62); text-align: center; color: var(--muted); }
+    .empty-state strong { color: var(--ink-2); font-size: 11px; }
+    .empty-state span { max-width: 320px; font-size: 9px; line-height: 1.5; }
+
+    @media (min-width: 1280px) {
+      .xl\:col-span-8 { grid-column: span 8 / span 8; }
+      .xl\:col-span-4 { grid-column: span 4 / span 4; }
+      .xl\:col-span-3 { grid-column: span 3 / span 3; }
+    }
+    @media (min-width: 720px) and (max-width: 1279px) {
+      .md\:col-span-6 { grid-column: span 6 / span 6; }
+      .md\:col-span-4 { grid-column: span 4 / span 4; }
+    }
+    @media (max-width: 1180px) {
+      .pipeline-strip { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    }
+    @media (max-width: 920px) {
+      .app-shell { grid-template-columns: 1fr; }
+      .sidebar { position: fixed; inset: 0 auto 0 0; width: 252px; transform: translateX(-105%); transition: transform .18s ease; }
+      body.menu-open .sidebar { transform: translateX(0); }
+      body.menu-open::after { position: fixed; z-index: 35; inset: 0; content: ""; background: rgba(9,31,27,.26); backdrop-filter: blur(2px); }
+      .mobile-menu { display: inline-flex; }
+      .stage { padding-top: 20px; }
+      .page-heading { display: block; }
+      .heading-actions { justify-content: flex-start; padding-top: 14px; }
+      .safety-banner { grid-template-columns: auto 1fr; }
+      .safety-code { display: none; }
+    }
+    @media (max-width: 720px) {
+      .grid-12 { gap: 11px; }
+      .pipeline-strip { grid-template-columns: 1fr 1fr; }
+      .target-form { grid-template-columns: 1fr; }
+      .target-form .span-2, .target-form .span-3, .target-form .span-4, .target-form .span-6 { grid-column: span 1; }
+      .section-heading { display: block; }
+      .section-meta { margin-top: 5px; text-align: left; }
+      .page-heading h1 { font-size: 2rem; }
+    }
+    @media (max-width: 520px) {
+      .topbar { padding-inline: 13px; }
+      .stage { padding-inline: 13px; }
+      .breadcrumb span { display: none; }
+      .local-pill { display: none; }
+      .pipeline-strip { grid-template-columns: 1fr; }
+      .project { padding: 15px; }
+      .project-head { display: grid; }
+      .form-row-2, .server-limits { grid-template-columns: 1fr; }
+      .heading-actions .button { flex: 1; }
+    }
   </style>
 </head>
 <body>
-<header>
-  <div><h1>Custom GitHub</h1><div class="muted">Local CI/CD + controlled production deployment</div></div>
-  <span class="badge green">LOCAL CONTROL PLANE</span>
-</header>
-<main>
-  <section class="hero">
-    <div class="panel">
-      <h2>Production rule</h2>
-      <div class="rule">GitHub stores source code. This PC syncs the repository, runs tests, builds the immutable Docker image, checks VPS capacity and only then allows <strong>Deploy Latest</strong>.</div>
-      <p class="muted">The production VPS never runs <code>git clone</code>, <code>npm build</code>, <code>dotnet build</code> or <code>docker build</code>. Existing application environment files stay untouched.</p>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar">
+    <div class="brand-lockup">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3v5a4 4 0 0 0 4 4h4"/><path d="m15 9 3 3-3 3"/><path d="M8 21v-4a4 4 0 0 1 4-4h4"/><circle cx="8" cy="3" r="2"/><circle cx="8" cy="21" r="2"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">Custom GitHub</div>
+        <div class="brand-sub">Local DevOps Control Plane</div>
+      </div>
     </div>
-    <div class="panel">
-      <h2>Add repository</h2>
-      <form id="project-form">
-        <input id="name" placeholder="loanhub" required />
-        <input id="github_url" placeholder="https://github.com/owner/repo.git" required />
-        <input id="branch" value="main" placeholder="main" required />
-        <button class="primary" type="submit">Add Repository</button>
-      </form>
+
+    <div class="nav-label">Workspace</div>
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="nav-item active" href="#overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></svg>
+        Overview
+      </a>
+      <a class="nav-item" href="#repositories">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+        Repositories
+      </a>
+      <a class="nav-item" href="#servers-section">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/></svg>
+        Servers
+      </a>
+      <a class="nav-item" href="#repositories">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+        Deployments
+      </a>
+    </nav>
+
+    <div class="nav-label">Platform</div>
+    <nav class="nav" aria-label="Platform navigation">
+      <a class="nav-item" href="#workflow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h4a4 4 0 0 1 4 4v6"/></svg>
+        Pipeline Flow
+      </a>
+      <a class="nav-item" href="#quick-setup">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1V21H9.55v-.1A1.7 1.7 0 0 0 8 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 3.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1-.4H2V9.55h.1A1.7 1.7 0 0 0 3.6 8a1.7 1.7 0 0 0-.34-1.88l-.06-.06L6.06 3.2l.06.06A1.7 1.7 0 0 0 8 3.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1H13.45a1.7 1.7 0 0 0 .55 1.6 1.7 1.7 0 0 0 1 .4 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19.4 8c.12.36.33.69.6 1 .27.31.62.52 1 .6H21v4.05a1.7 1.7 0 0 0-1.6 1.35Z"/></svg>
+        Quick Setup
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="plane-status"><span class="live-dot"></span> Local control plane online</div>
+      <p class="sidebar-note">Build locally. Transfer immutable releases. Keep production VPS nodes clean and predictable.</p>
     </div>
-    <div class="panel">
-      <h2>Add production VPS</h2>
-      <form id="server-form">
-        <input id="server_name" placeholder="production-01" required />
-        <input id="server_host" placeholder="203.0.113.10" required />
-        <input id="server_user" value="deploy" placeholder="deploy" required />
-        <input id="identity_file" placeholder="~/.ssh/custom_github_deploy" />
-        <button class="primary" type="submit">Register VPS</button>
-      </form>
-    </div>
-  </section>
+  </aside>
 
-  <div id="notice"></div>
+  <div class="workspace">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button class="button icon-button mobile-menu" type="button" aria-label="Open navigation" onclick="toggleMenu()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div class="breadcrumb">
+          <span>Custom GitHub</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+          <strong>Control Center</strong>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="button icon-button" type="button" title="Refresh" onclick="refreshWithNotice()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M6.1 9a7 7 0 0 1 11.5-2.6L20 11M4 13l2.4 4.6A7 7 0 0 0 18 15"/></svg>
+        </button>
+        <span class="local-pill">Local Control Plane</span>
+      </div>
+    </header>
 
-  <div class="section-head"><h2>Servers</h2><span class="muted">SSH keys stay on this PC; private key contents are never stored in the database.</span></div>
-  <section id="servers" class="servers"></section>
+    <main class="stage" id="overview">
+      <div class="page-heading">
+        <div>
+          <span class="eyebrow">Production operations</span>
+          <h1>Control Center</h1>
+          <p>One place to sync source, run local pipelines, produce immutable Docker releases, verify VPS capacity and deploy the exact green build.</p>
+        </div>
+        <div class="heading-actions">
+          <a class="button" href="#quick-setup">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg>
+            Quick setup
+          </a>
+          <button class="button primary" type="button" onclick="refreshWithNotice()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M6.1 9a7 7 0 0 1 11.5-2.6L20 11M4 13l2.4 4.6A7 7 0 0 0 18 15"/></svg>
+            Refresh state
+          </button>
+        </div>
+      </div>
 
-  <div class="section-head"><h2>Repositories & deployments</h2><span class="muted">Deploy Latest always means the exact latest green Docker image.</span></div>
-  <section id="projects" class="projects"></section>
-</main>
+      <div class="safety-banner">
+        <div class="safety-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v5c0 5 3.4 8.5 8 10 4.6-1.5 8-5 8-10V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </div>
+        <div>
+          <strong>Production rule is enforced by design</strong>
+          <p>The production VPS never performs source checkout or application builds. This PC tests and builds first; production only receives the approved image and starts it with no build.</p>
+        </div>
+        <div class="safety-code">git clone ✕ · npm build ✕ · docker build ✕</div>
+      </div>
+
+      <div id="notice" role="status" aria-live="polite"></div>
+
+      <section class="grid-12" aria-label="Overview metrics">
+        <article class="surface metric-card col-span-12 md:col-span-6 xl:col-span-3">
+          <div class="metric-top"><span class="metric-label">Repositories</span><span class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg></span></div>
+          <div class="metric-value" id="repo-count">—</div>
+          <div class="metric-caption">Registered source repositories</div>
+        </article>
+        <article class="surface metric-card col-span-12 md:col-span-6 xl:col-span-3">
+          <div class="metric-top"><span class="metric-label">Production VPS</span><span class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/></svg></span></div>
+          <div class="metric-value" id="server-count">—</div>
+          <div class="metric-caption">Registered deployment nodes</div>
+        </article>
+        <article class="surface metric-card col-span-12 md:col-span-6 xl:col-span-3">
+          <div class="metric-top"><span class="metric-label">Green builds</span><span class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m5 12 4 4L19 6"/></svg></span></div>
+          <div class="metric-value" id="green-count">—</div>
+          <div class="metric-caption">Latest pipelines passing</div>
+        </article>
+        <article class="surface metric-card col-span-12 md:col-span-6 xl:col-span-3">
+          <div class="metric-top"><span class="metric-label">Deployable</span><span class="metric-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg></span></div>
+          <div class="metric-value" id="deployable-count">—</div>
+          <div class="metric-caption">Exact green images ready now</div>
+        </article>
+      </section>
+
+      <section class="grid-12 section-block">
+        <div class="col-span-12 xl:col-span-8" id="repositories">
+          <div class="section-heading">
+            <div><h2>Repositories & deployments</h2><p>Operational work comes first: sync, validate, build, target and deploy.</p></div>
+            <div class="section-meta">Deploy Latest = exact latest green Docker image</div>
+          </div>
+          <div id="projects" class="projects"></div>
+        </div>
+
+        <aside class="col-span-12 xl:col-span-4">
+          <div id="servers-section">
+            <div class="section-heading">
+              <div><h2>Production servers</h2><p>Capacity gates protect each VPS before a release starts.</p></div>
+            </div>
+            <div id="servers" class="servers"></div>
+          </div>
+
+          <div id="quick-setup" class="section-block">
+            <div class="section-heading"><div><h2>Quick setup</h2><p>Keep configuration secondary to live operations.</p></div></div>
+
+            <article class="surface quick-panel">
+              <div class="panel-head">
+                <span class="panel-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg></span>
+                <div><h3>Add repository</h3><p>Register a GitHub source and branch.</p></div>
+              </div>
+              <form id="project-form" class="compact-form">
+                <label>Repository name<input id="name" placeholder="loanhub" autocomplete="off" required /></label>
+                <label>GitHub HTTPS URL<input id="github_url" placeholder="https://github.com/owner/repo.git" autocomplete="off" required /></label>
+                <label>Branch<input id="branch" value="main" placeholder="main" autocomplete="off" required /></label>
+                <button class="button primary" type="submit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg>
+                  Add Repository
+                </button>
+              </form>
+            </article>
+
+            <article class="surface quick-panel">
+              <div class="panel-head">
+                <span class="panel-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/><path d="M7 7h.01M7 17h.01"/></svg></span>
+                <div><h3>Add production VPS</h3><p>Only the SSH key path is stored; the private key stays on this PC.</p></div>
+              </div>
+              <form id="server-form" class="compact-form">
+                <div class="form-row-2">
+                  <label>Server name<input id="server_name" placeholder="production-01" required /></label>
+                  <label>Host / IP<input id="server_host" placeholder="203.0.113.10" required /></label>
+                </div>
+                <label>SSH user<input id="server_user" value="deploy" placeholder="deploy" required /></label>
+                <label>Identity file<input id="identity_file" placeholder="~/.ssh/custom_github_deploy" /></label>
+                <button class="button primary" type="submit">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 5v14M5 12h14"/></svg>
+                  Register VPS
+                </button>
+              </form>
+            </article>
+
+            <article class="surface flow-panel" id="workflow">
+              <div class="panel-head">
+                <span class="panel-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="18" r="2"/><path d="M8 6h4a4 4 0 0 1 4 4v6"/></svg></span>
+                <div><h3>Controlled release flow</h3><p>The safe path from source to production.</p></div>
+              </div>
+              <div class="flow">
+                <div class="flow-item"><span class="flow-dot">01</span><div class="flow-copy"><strong>Sync GitHub</strong><span>Bring the selected branch to the local workspace.</span></div></div>
+                <div class="flow-item"><span class="flow-dot">02</span><div class="flow-copy"><strong>Run local pipeline</strong><span>Tests and builds consume this PC, not production.</span></div></div>
+                <div class="flow-item"><span class="flow-dot">03</span><div class="flow-copy"><strong>Create green image</strong><span>Release is pinned to the exact tested commit.</span></div></div>
+                <div class="flow-item"><span class="flow-dot">04</span><div class="flow-copy"><strong>VPS preflight</strong><span>Disk and memory capacity must pass policy.</span></div></div>
+                <div class="flow-item"><span class="flow-dot">05</span><div class="flow-copy"><strong>Deploy latest</strong><span>Production starts the immutable image with no build.</span></div></div>
+              </div>
+            </article>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+</div>
+
 <script>
 const $projects = document.getElementById('projects');
 const $servers = document.getElementById('servers');
 const $notice = document.getElementById('notice');
 let serversCache = [];
+let projectsCache = [];
+const serverMetricsCache = new Map();
+
+const icons = {
+  clock: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`
+};
 
 function esc(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function shortSha(sha) { return sha ? sha.slice(0, 8) : '—'; }
 function badge(text, cls='yellow') { return `<span class="badge ${cls}">${esc(text)}</span>`; }
+function note(message) {
+  if (!message) { $notice.textContent = ''; $notice.classList.remove('show'); return; }
+  $notice.textContent = message;
+  $notice.classList.add('show');
+}
+function toggleMenu(force) {
+  const shouldOpen = typeof force === 'boolean' ? force : !document.body.classList.contains('menu-open');
+  document.body.classList.toggle('menu-open', shouldOpen);
+}
+document.addEventListener('click', event => {
+  if (window.innerWidth > 920 || !document.body.classList.contains('menu-open')) return;
+  if (event.target.closest('.mobile-menu') || event.target.closest('.sidebar')) return;
+  toggleMenu(false);
+});
+document.querySelectorAll('.sidebar a').forEach(a => a.addEventListener('click', () => toggleMenu(false)));
+
 function projectBadge(p) {
   if (p.latest_deployment && ['queued','preflight','transferring','deploying','health-check'].includes(p.latest_deployment.status)) return badge(p.latest_deployment.status.toUpperCase(), 'blue');
   if (!p.latest_run) return badge('NOT TESTED');
@@ -106,6 +650,7 @@ function projectBadge(p) {
   if (!p.latest_green_image) return badge('DOCKER IMAGE REQUIRED');
   return badge('NOT DEPLOYABLE');
 }
+
 async function api(url, options={}) {
   const response = await fetch(url, {headers:{'Content-Type':'application/json'}, ...options});
   let body = {};
@@ -113,106 +658,229 @@ async function api(url, options={}) {
   if (!response.ok) throw new Error(body.detail || `Request failed (${response.status})`);
   return body;
 }
-function note(message) { $notice.textContent = message; }
+
 function serverOptions(selected) {
   return serversCache.map(s => `<option value="${s.id}" ${Number(selected)===Number(s.id)?'selected':''}>${esc(s.name)} · ${esc(s.host)}</option>`).join('');
 }
+
 function deploymentText(d) {
   if (!d) return 'No deployment history yet.';
   const terminal = ['success','failed','rolled-back','rollback-failed'].includes(d.status);
   return `#${d.id} · ${esc(d.status.toUpperCase())} · ${shortSha(d.commit_sha)}${d.status_message ? ` · ${esc(d.status_message)}` : ''}${terminal && d.finished_at ? ` · ${new Date(d.finished_at).toLocaleString()}` : ''}`;
 }
+
+function stageClass(ok, failed=false, ready=false) {
+  if (failed) return 'failed';
+  if (ok) return 'done';
+  if (ready) return 'ready';
+  return '';
+}
+
+function pipelineMarkup(p) {
+  const synced = Boolean(p.latest_sha);
+  const pipelinePassed = p.latest_run?.status === 'success';
+  const pipelineFailed = p.latest_run?.status === 'failed';
+  const imageReady = Boolean(p.latest_green_image);
+  const targetReady = Boolean(p.target);
+  return `
+    <div class="pipeline-strip" aria-label="Release readiness">
+      <div class="pipeline-step ${stageClass(synced)}"><small>GitHub latest</small><code>${shortSha(p.latest_sha)}</code></div>
+      <div class="pipeline-step ${stageClass(pipelinePassed, pipelineFailed)}"><small>Local pipeline</small><strong>${p.latest_run ? esc(p.latest_run.status.toUpperCase()) : 'NOT RUN'}</strong></div>
+      <div class="pipeline-step ${stageClass(imageReady)}"><small>Green image</small><code>${p.latest_green_image ? esc(p.latest_green_image) : 'NOT BUILT'}</code></div>
+      <div class="pipeline-step ${stageClass(targetReady)}"><small>Target VPS</small><strong>${p.target ? esc(p.target.server_name) : 'REQUIRED'}</strong></div>
+      <div class="pipeline-step ${stageClass(false, false, p.deployable)}"><small>Deploy latest</small><strong>${p.deployable ? 'ENABLED' : 'BLOCKED'}</strong></div>
+    </div>`;
+}
+
+function metricBar(label, value, threshold) {
+  const n = Math.max(0, Math.min(100, Number(value) || 0));
+  const className = n >= threshold ? 'danger' : n >= Math.max(65, threshold - 12) ? 'warn' : '';
+  return `<div><div class="meter-head"><span>${esc(label)}</span><strong>${n.toFixed(1)}%</strong></div><div class="meter"><span class="${className}" style="width:${n}%"></span></div></div>`;
+}
+
+function updateOverview() {
+  document.getElementById('repo-count').textContent = projectsCache.length;
+  document.getElementById('server-count').textContent = serversCache.length;
+  document.getElementById('green-count').textContent = projectsCache.filter(p => p.latest_run?.status === 'success').length;
+  document.getElementById('deployable-count').textContent = projectsCache.filter(p => p.deployable).length;
+}
+
 async function refreshServers() {
   serversCache = await api('/api/servers');
+  updateOverview();
   if (!serversCache.length) {
-    $servers.innerHTML = '<div class="panel muted">No production VPS registered yet.</div>';
+    $servers.innerHTML = `<div class="empty-state"><strong>No production VPS registered</strong><span>Add your first server in Quick setup. SSH key contents always stay on this PC.</span></div>`;
     return;
   }
-  $servers.innerHTML = serversCache.map(s => `
-    <article class="server">
-      <div class="server-head"><div><h3>${esc(s.name)}</h3><div class="muted">${esc(s.ssh_user)}@${esc(s.host)}:${s.port}</div></div>${badge(`DISK < ${s.max_disk_percent}%`, 'blue')}</div>
-      <p class="muted">Memory deployment limit: ${s.max_memory_percent}%<br>SSH identity: ${esc(s.identity_file || 'default SSH agent/key')}</p>
-      <div class="actions"><button onclick="checkServer(${s.id}, '${esc(s.name)}')">Check VPS</button></div>
-    </article>`).join('');
+  $servers.innerHTML = serversCache.map(s => {
+    const metrics = serverMetricsCache.get(Number(s.id));
+    return `
+      <article class="surface server">
+        <div class="server-head">
+          <div><h3>${esc(s.name)}</h3><div class="server-address">${esc(s.ssh_user)}@${esc(s.host)}:${s.port}</div></div>
+          ${metrics ? badge('ONLINE', 'green') : badge('NOT CHECKED', 'yellow')}
+        </div>
+        <div class="server-limits">
+          <div class="limit"><small>Disk gate</small><strong>&lt; ${s.max_disk_percent}%</strong></div>
+          <div class="limit"><small>Memory gate</small><strong>&lt; ${s.max_memory_percent}%</strong></div>
+        </div>
+        ${metrics ? `<div class="server-metrics">${metricBar('Memory used', metrics.memory_used_percent, s.max_memory_percent)}${metricBar('Disk used', metrics.disk_used_percent, s.max_disk_percent)}</div>` : ''}
+        <div class="server-key">SSH identity: ${esc(s.identity_file || 'default SSH agent/key')}</div>
+        <button class="button" onclick="checkServer(${s.id}, '${esc(s.name)}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M6.1 9a7 7 0 0 1 11.5-2.6L20 11M4 13l2.4 4.6A7 7 0 0 0 18 15"/></svg>
+          Check VPS
+        </button>
+      </article>`;
+  }).join('');
 }
+
 async function refreshProjects() {
-  const projects = await api('/api/projects');
-  if (!projects.length) {
-    $projects.innerHTML = '<div class="panel muted">No repositories registered yet.</div>';
+  projectsCache = await api('/api/projects');
+  updateOverview();
+  if (!projectsCache.length) {
+    $projects.innerHTML = `<div class="empty-state"><strong>No repositories registered</strong><span>Add a repository in Quick setup, sync it, then run its local pipeline to create the first green release.</span></div>`;
     return;
   }
-  $projects.innerHTML = projects.map(p => `
-    <article class="project">
+  $projects.innerHTML = projectsCache.map(p => `
+    <article class="surface project">
       <div class="project-head">
-        <div><h3>${esc(p.name)}</h3><div class="muted">${esc(p.github_url)} · ${esc(p.branch)}</div></div>
+        <div class="project-title">
+          <h3>${esc(p.name)}</h3>
+          <div class="repo-link">${esc(p.github_url)} <span class="repo-branch">${esc(p.branch)}</span></div>
+        </div>
         ${projectBadge(p)}
       </div>
-      <div class="grid">
-        <div class="metric"><small>GitHub latest</small><code>${shortSha(p.latest_sha)}</code></div>
-        <div class="metric"><small>Latest pipeline</small>${p.latest_run ? esc(p.latest_run.status.toUpperCase()) : '—'}</div>
-        <div class="metric"><small>Green image</small><code>${p.latest_green_image ? esc(p.latest_green_image) : '—'}</code></div>
-        <div class="metric"><small>Target VPS</small>${p.target ? esc(p.target.server_name) : '—'}</div>
-        <div class="metric"><small>Deploy latest</small>${p.deployable ? 'ENABLED' : 'BLOCKED'}</div>
+      ${pipelineMarkup(p)}
+      <div class="project-actions">
+        <button class="button" onclick="syncProject(${p.id}, '${esc(p.name)}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M20 6v5h-5"/><path d="M4 18v-5h5"/><path d="M6.1 9a7 7 0 0 1 11.5-2.6L20 11M4 13l2.4 4.6A7 7 0 0 0 18 15"/></svg>
+          Sync GitHub
+        </button>
+        <button class="button primary" onclick="runPipeline(${p.id}, '${esc(p.name)}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="m8 5 11 7-11 7V5Z"/></svg>
+          Run Pipeline
+        </button>
+        <button class="button deploy" ${p.deployable ? '' : 'disabled'} title="${p.deployable ? 'Deploy the exact latest green image' : 'Sync, pass the pipeline, build an image and configure a target first'}" onclick="deployLatest(${p.id}, '${esc(p.name)}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Deploy Latest
+        </button>
       </div>
-      <div class="actions">
-        <button onclick="syncProject(${p.id}, '${esc(p.name)}')">Sync GitHub</button>
-        <button onclick="runPipeline(${p.id}, '${esc(p.name)}')">Run Pipeline</button>
-        <button class="deploy" ${p.deployable ? '' : 'disabled'} onclick="deployLatest(${p.id}, '${esc(p.name)}')">Deploy Latest</button>
-      </div>
-      <div class="deploy-status"><strong>Latest deployment:</strong> ${deploymentText(p.latest_deployment)}</div>
-      <details>
-        <summary>Deployment target</summary>
+      <div class="deployment-row">${icons.clock}<div><strong>Latest deployment:</strong> ${deploymentText(p.latest_deployment)}</div></div>
+      <details class="target">
+        <summary>Deployment target & production requirements</summary>
         ${serversCache.length ? `
         <form class="target-form" onsubmit="saveTarget(event, ${p.id}, '${esc(p.name)}')">
-          <label>VPS<select name="server_id" required>${serverOptions(p.target?.server_id)}</select></label>
-          <label class="wide">Compose directory<input name="compose_dir" value="${esc(p.target?.compose_dir || `/opt/apps/${p.name}`)}" required /></label>
-          <label>Compose file<input name="compose_file" value="${esc(p.target?.compose_file || 'compose.yaml')}" required /></label>
-          <label>Service name<input name="service_name" value="${esc(p.target?.service_name || p.name)}" required /></label>
-          <label class="wide">Health URL<input name="health_url" value="${esc(p.target?.health_url || '')}" placeholder="https://app.example.com/health" required /></label>
-          <label>Required RAM MB<input name="required_memory_mb" type="number" value="${p.target?.required_memory_mb || 512}" min="64" required /></label>
-          <label>Required disk MB<input name="required_disk_mb" type="number" value="${p.target?.required_disk_mb || 2048}" min="128" required /></label>
-          <button class="primary" type="submit">Save Target</button>
-        </form>` : '<p class="muted">Register a VPS first.</p>'}
+          <label class="span-2">Production VPS<select name="server_id" required>${serverOptions(p.target?.server_id)}</select></label>
+          <label class="span-4">Compose directory<input name="compose_dir" value="${esc(p.target?.compose_dir || `/opt/apps/${p.name}`)}" required /></label>
+          <label class="span-2">Compose file<input name="compose_file" value="${esc(p.target?.compose_file || 'compose.yaml')}" required /></label>
+          <label class="span-2">Service name<input name="service_name" value="${esc(p.target?.service_name || p.name)}" required /></label>
+          <label class="span-2">Required RAM MB<input name="required_memory_mb" type="number" value="${p.target?.required_memory_mb || 512}" min="64" required /></label>
+          <label class="span-2">Required disk MB<input name="required_disk_mb" type="number" value="${p.target?.required_disk_mb || 2048}" min="128" required /></label>
+          <label class="span-4">Health URL<input name="health_url" value="${esc(p.target?.health_url || '')}" placeholder="https://app.example.com/health" required /></label>
+          <div class="span-2" style="display:flex;align-items:end"><button class="button primary" style="width:100%" type="submit">Save Target</button></div>
+        </form>` : '<div class="empty-state" style="margin-top:12px"><strong>Register a VPS first</strong><span>A production target can only be configured after a server exists.</span></div>'}
       </details>
     </article>
   `).join('');
 }
+
 async function refresh() { await refreshServers(); await refreshProjects(); }
+async function refreshWithNotice() {
+  try { note('Refreshing control-plane state…'); await refresh(); note('Control-plane state is up to date.'); }
+  catch (e) { note(e.message); }
+}
+
 async function checkServer(id, name) {
   try {
-    note(`Checking ${name}…`); const r = await api(`/api/servers/${id}/check`, {method:'POST'}); const m=r.metrics;
+    note(`Checking ${name}…`);
+    const r = await api(`/api/servers/${id}/check`, {method:'POST'});
+    const m = r.metrics;
+    serverMetricsCache.set(Number(id), m);
+    await refreshServers();
     note(`${name} online · RAM ${m.memory_used_percent}% (${m.mem_available_mb} MB free) · disk ${m.disk_used_percent}% (${m.disk_available_mb} MB free) · CPU load ${m.load_1}/${m.cpu_count}.`);
   } catch(e) { note(e.message); }
 }
+
 async function syncProject(id, name) {
-  try { note(`Syncing ${name} from GitHub…`); const r=await api(`/api/projects/${id}/sync`,{method:'POST'}); note(`${name} synced at ${shortSha(r.commit_sha)}.`); await refreshProjects(); }
-  catch(e){ note(e.message); }
+  try {
+    note(`Syncing ${name} from GitHub…`);
+    const r = await api(`/api/projects/${id}/sync`, {method:'POST'});
+    note(`${name} synced at ${shortSha(r.commit_sha)}.`);
+    await refreshProjects();
+  } catch(e) { note(e.message); }
 }
+
 async function runPipeline(id, name) {
-  try { note(`Running local pipeline for ${name}…`); const r=await api(`/api/projects/${id}/pipeline`,{method:'POST'}); note(`${name} pipeline ${r.status.toUpperCase()} at ${shortSha(r.commit_sha)}${r.image_tag ? ` · image ${r.image_tag}` : ''}.`); await refreshProjects(); }
-  catch(e){ note(e.message); }
+  try {
+    note(`Running local pipeline for ${name}…`);
+    const r = await api(`/api/projects/${id}/pipeline`, {method:'POST'});
+    note(`${name} pipeline ${r.status.toUpperCase()} at ${shortSha(r.commit_sha)}${r.image_tag ? ` · image ${r.image_tag}` : ''}.`);
+    await refreshProjects();
+  } catch(e) { note(e.message); }
 }
+
 async function deployLatest(id, name) {
   if (!confirm(`Deploy the latest GREEN immutable image for ${name} to production?`)) return;
-  try { note(`Queueing controlled deployment for ${name}…`); const r=await api(`/api/projects/${id}/deploy-latest`,{method:'POST'}); note(`${name}: deployment #${r.deployment_id} queued for ${shortSha(r.commit_sha)}.`); await refreshProjects(); }
-  catch(e){ note(e.message); }
+  try {
+    note(`Queueing controlled deployment for ${name}…`);
+    const r = await api(`/api/projects/${id}/deploy-latest`, {method:'POST'});
+    note(`${name}: deployment #${r.deployment_id} queued for ${shortSha(r.commit_sha)}.`);
+    await refreshProjects();
+  } catch(e) { note(e.message); }
 }
+
 async function saveTarget(event, projectId, name) {
-  event.preventDefault(); const fd=new FormData(event.target);
-  const payload={server_id:Number(fd.get('server_id')),compose_dir:fd.get('compose_dir'),compose_file:fd.get('compose_file'),service_name:fd.get('service_name'),health_url:fd.get('health_url'),required_memory_mb:Number(fd.get('required_memory_mb')),required_disk_mb:Number(fd.get('required_disk_mb'))};
-  try { await api(`/api/projects/${projectId}/deployment-target`,{method:'PUT',body:JSON.stringify(payload)}); note(`${name} deployment target saved.`); await refreshProjects(); }
-  catch(e){ note(e.message); }
+  event.preventDefault();
+  const fd = new FormData(event.target);
+  const payload = {
+    server_id: Number(fd.get('server_id')),
+    compose_dir: fd.get('compose_dir'),
+    compose_file: fd.get('compose_file'),
+    service_name: fd.get('service_name'),
+    health_url: fd.get('health_url'),
+    required_memory_mb: Number(fd.get('required_memory_mb')),
+    required_disk_mb: Number(fd.get('required_disk_mb'))
+  };
+  try {
+    await api(`/api/projects/${projectId}/deployment-target`, {method:'PUT', body:JSON.stringify(payload)});
+    note(`${name} deployment target saved.`);
+    await refreshProjects();
+  } catch(e) { note(e.message); }
 }
+
 document.getElementById('project-form').addEventListener('submit', async event => {
   event.preventDefault();
-  try { const payload={name:document.getElementById('name').value,github_url:document.getElementById('github_url').value,branch:document.getElementById('branch').value}; await api('/api/projects',{method:'POST',body:JSON.stringify(payload)}); event.target.reset(); document.getElementById('branch').value='main'; note(`${payload.name} added.`); await refreshProjects(); }
-  catch(e){ note(e.message); }
+  try {
+    const payload = {
+      name: document.getElementById('name').value,
+      github_url: document.getElementById('github_url').value,
+      branch: document.getElementById('branch').value
+    };
+    await api('/api/projects', {method:'POST', body:JSON.stringify(payload)});
+    event.target.reset();
+    document.getElementById('branch').value = 'main';
+    note(`${payload.name} added.`);
+    await refreshProjects();
+  } catch(e) { note(e.message); }
 });
+
 document.getElementById('server-form').addEventListener('submit', async event => {
   event.preventDefault();
-  try { const payload={name:document.getElementById('server_name').value,host:document.getElementById('server_host').value,ssh_user:document.getElementById('server_user').value,identity_file:document.getElementById('identity_file').value || null}; await api('/api/servers',{method:'POST',body:JSON.stringify(payload)}); event.target.reset(); document.getElementById('server_user').value='deploy'; note(`${payload.name} registered.`); await refresh(); }
-  catch(e){ note(e.message); }
+  try {
+    const payload = {
+      name: document.getElementById('server_name').value,
+      host: document.getElementById('server_host').value,
+      ssh_user: document.getElementById('server_user').value,
+      identity_file: document.getElementById('identity_file').value || null
+    };
+    await api('/api/servers', {method:'POST', body:JSON.stringify(payload)});
+    event.target.reset();
+    document.getElementById('server_user').value = 'deploy';
+    note(`${payload.name} registered.`);
+    await refresh();
+  } catch(e) { note(e.message); }
 });
+
 refresh().catch(e => note(e.message));
 setInterval(() => refreshProjects().catch(() => {}), 5000);
 </script>

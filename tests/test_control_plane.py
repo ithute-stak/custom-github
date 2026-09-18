@@ -11,7 +11,7 @@ os.environ["CUSTOM_GITHUB_WORKSPACE_ROOT"] = str(TEST_WORKSPACES)
 
 from fastapi.testclient import TestClient
 
-from app.deployment import capacity_gate
+from app.deployment import _compose_command, capacity_gate
 from app.main import app, db, init_db, utc_now
 
 
@@ -75,6 +75,21 @@ def test_capacity_gate_blocks_unsafe_vps() -> None:
     assert any("Memory usage" in failure for failure in failures)
 
 
+def test_compose_activation_uses_override_and_never_builds() -> None:
+    target = {
+        "compose_dir": "/opt/apps/loanhub",
+        "compose_file": "compose.yaml",
+        "service_name": "api",
+    }
+    command = _compose_command(target, "custom-github/loanhub:abc123def456")
+    assert ".custom-github.override.yaml" in command
+    assert ".custom-github.release" in command
+    assert "--no-build" in command
+    assert "--env-file" not in command
+    assert "docker build" not in command
+    assert "git " not in command
+
+
 def test_deploy_latest_requires_exact_green_docker_image() -> None:
     now = utc_now()
     with db() as connection:
@@ -128,7 +143,6 @@ def test_target_rejects_non_http_health_url() -> None:
             "compose_dir": "/opt/apps/gate-test",
             "compose_file": "compose.yaml",
             "service_name": "gate-test",
-            "image_env_key": "CUSTOM_GITHUB_IMAGE",
             "health_url": "file:///etc/passwd",
             "required_memory_mb": 512,
             "required_disk_mb": 2048,

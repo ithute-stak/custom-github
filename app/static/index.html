@@ -21,7 +21,6 @@
     button { border:1px solid #30363d; border-radius:7px; padding:9px 13px; font-weight:650; cursor:pointer; background:#21262d; color:#e6edf3; }
     button.primary { background:#238636; border-color:#2ea043; }
     button.deploy { background:#1f6feb; border-color:#388bfd; }
-    button.danger { border-color:#da3633; color:#ff7b72; }
     button:disabled { opacity:.42; cursor:not-allowed; }
     .actions { display:flex; gap:8px; flex-wrap:wrap; }
     .projects,.servers { display:grid; gap:14px; }
@@ -58,7 +57,7 @@
     <div class="panel">
       <h2>Production rule</h2>
       <div class="rule">GitHub stores source code. This PC syncs the repository, runs tests, builds the immutable Docker image, checks VPS capacity and only then allows <strong>Deploy Latest</strong>.</div>
-      <p class="muted">The production VPS never runs <code>git clone</code>, <code>npm build</code>, <code>dotnet build</code> or <code>docker build</code>.</p>
+      <p class="muted">The production VPS never runs <code>git clone</code>, <code>npm build</code>, <code>dotnet build</code> or <code>docker build</code>. Existing application environment files stay untouched.</p>
     </div>
     <div class="panel">
       <h2>Add repository</h2>
@@ -169,7 +168,6 @@ async function refreshProjects() {
           <label class="wide">Compose directory<input name="compose_dir" value="${esc(p.target?.compose_dir || `/opt/apps/${p.name}`)}" required /></label>
           <label>Compose file<input name="compose_file" value="${esc(p.target?.compose_file || 'compose.yaml')}" required /></label>
           <label>Service name<input name="service_name" value="${esc(p.target?.service_name || p.name)}" required /></label>
-          <label>Image variable<input name="image_env_key" value="${esc(p.target?.image_env_key || 'CUSTOM_GITHUB_IMAGE')}" required /></label>
           <label class="wide">Health URL<input name="health_url" value="${esc(p.target?.health_url || '')}" placeholder="https://app.example.com/health" required /></label>
           <label>Required RAM MB<input name="required_memory_mb" type="number" value="${p.target?.required_memory_mb || 512}" min="64" required /></label>
           <label>Required disk MB<input name="required_disk_mb" type="number" value="${p.target?.required_disk_mb || 2048}" min="128" required /></label>
@@ -201,7 +199,7 @@ async function deployLatest(id, name) {
 }
 async function saveTarget(event, projectId, name) {
   event.preventDefault(); const fd=new FormData(event.target);
-  const payload={server_id:Number(fd.get('server_id')),compose_dir:fd.get('compose_dir'),compose_file:fd.get('compose_file'),service_name:fd.get('service_name'),image_env_key:fd.get('image_env_key'),health_url:fd.get('health_url'),required_memory_mb:Number(fd.get('required_memory_mb')),required_disk_mb:Number(fd.get('required_disk_mb'))};
+  const payload={server_id:Number(fd.get('server_id')),compose_dir:fd.get('compose_dir'),compose_file:fd.get('compose_file'),service_name:fd.get('service_name'),health_url:fd.get('health_url'),required_memory_mb:Number(fd.get('required_memory_mb')),required_disk_mb:Number(fd.get('required_disk_mb'))};
   try { await api(`/api/projects/${projectId}/deployment-target`,{method:'PUT',body:JSON.stringify(payload)}); note(`${name} deployment target saved.`); await refreshProjects(); }
   catch(e){ note(e.message); }
 }

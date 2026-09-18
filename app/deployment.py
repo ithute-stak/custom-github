@@ -190,13 +190,12 @@ def _compose_command(target: dict[str, Any], image_tag: str) -> str:
     compose_dir = shlex.quote(target["compose_dir"])
     compose_file = shlex.quote(target["compose_file"])
     service_name = shlex.quote(target["service_name"])
-    env_key = target["image_env_key"]
     env_file = ".custom-github.env"
-    quoted_image = shlex.quote(image_tag)
+    env_line = shlex.quote(target["image_env_key"] + "=" + image_tag)
     return (
         "set -eu; "
         f"cd {compose_dir}; "
-        f"printf '%s\\n' {shlex.quote(env_key + '=' + image_tag)} > {env_file}; "
+        f"printf '%s\\n' {env_line} > {env_file}; "
         f"docker compose --env-file {env_file} -f {compose_file} up -d --no-build {service_name}; "
         f"docker compose --env-file {env_file} -f {compose_file} ps {service_name}"
     )
@@ -204,12 +203,12 @@ def _compose_command(target: dict[str, Any], image_tag: str) -> str:
 
 def read_previous_image(server: dict[str, Any], target: dict[str, Any]) -> str | None:
     compose_dir = shlex.quote(target["compose_dir"])
-    env_key = shlex.quote(target["image_env_key"])
+    env_key = target["image_env_key"]
     command = (
         "set -eu; "
         f"cd {compose_dir}; "
         "if [ -f .custom-github.env ]; then "
-        f"grep -E '^{target['image_env_key']}=' .custom-github.env | tail -n1 | cut -d= -f2- || true; "
+        f"grep -E '^{env_key}=' .custom-github.env | tail -n1 | cut -d= -f2- || true; "
         "fi"
     )
     code, output = ssh_command(server, command, timeout=20)
@@ -239,6 +238,48 @@ def check_health(url: str, attempts: int = 12, delay_seconds: float = 5.0) -> No
             last_error = str(exc)
         time.sleep(delay_seconds)
     raise RuntimeError(f"Health check failed after {attempts} attempts: {last_error}")
+
+
+def cleanup_project_images(
+    server: dict[str, Any],
+    current_image: str,
+    previous_image: str | None,
+) -> str:
+    """Remove only older images from this Custom GitHub project; never prune volumes or unrelated images."""
+    repository = current_image.rsplit(":", 1)[0]
+    keep_current = shlex.quote(current_image)
+    keep_previous = shlex.quote(previous_image or "")
+    repo_filter = shlex.quote(repository)
+    script = (
+        "set -eu; "
+        f"current={keep_current}; previous={keep_previous}; "
+        f"for image in $(docker image ls {repo_filter} --format '{{{{.Repository}}}}:{{{{.Tag}}}}'); do "
+        "if [ \"$image\" = \"$current\" ] || [ -n \"$previous\" ] && [ \"$image\" = \"$previous\" ]; then continue; fi; "
+        "docker image rm \"$image\" >/dev/null 2>&1 || true; "
+        "done; "
+        "echo 'Project image retention complete.'"
+    )
+    code, output = ssh_command(server, script, timeout=120)
+    if code != 0:
+        raise RuntimeError(f"Project image cleanup failed: {output[-3000:]}")
+    return output
+
+
+def remove_failed_image(server: dict[str, Any], image_tag: str) -> None:
+    code, _ = ssh_command(server, f"docker image rm {shlex.quote(image_tag)} >/dev/null 2>&1 || true", timeout=60)
+    if code not in (0,):
+        return
+
+
+def execute_rollback(
+    *,
+    server: dict[str, Any],
+    target: dict[str, Any],
+    image_tag: str,
+) -> str:
+    output = activate_release(server, target, image_tag)
+    check_health(target["health_url"], attempts=10, delay_seconds=3)
+    return output
 
 
 def execute_deployment(
@@ -273,15 +314,21 @@ def execute_deployment(
         set_status("health-check", f"Checking {target['health_url']}")
         check_health(target["health_url"])
         append_log("Health check passed.")
+
+        try:
+            append_log(cleanup_project_images(server, image_tag, previous_image))
+        except Exception as cleanup_exc:
+            append_log(f"WARNING: release succeeded but image retention cleanup failed: {cleanup_exc}")
+
         set_status("success", "Deployment completed successfully")
     except Exception as exc:
         append_log(f"ERROR: {exc}")
         if previous_image:
             try:
                 append_log(f"Attempting automatic rollback to {previous_image}.")
-                activate_release(server, target, previous_image)
-                check_health(target["health_url"], attempts=8, delay_seconds=3)
-                append_log("Rollback health check passed.")
+                execute_rollback(server=server, target=target, image_tag=previous_image)
+                remove_failed_image(server, image_tag)
+                append_log("Rollback health check passed; failed release image removed when safe.")
                 set_status("rolled-back", f"Deployment failed and rollback succeeded: {exc}")
                 return
             except Exception as rollback_exc:

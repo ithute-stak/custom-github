@@ -186,30 +186,42 @@ def transfer_docker_image(server: dict[str, Any], image_tag: str) -> str:
     return remote_output
 
 
+def _yaml_quote(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
 def _compose_command(target: dict[str, Any], image_tag: str) -> str:
     compose_dir = shlex.quote(target["compose_dir"])
     compose_file = shlex.quote(target["compose_file"])
-    service_name = shlex.quote(target["service_name"])
-    env_file = ".custom-github.env"
-    env_line = shlex.quote(target["image_env_key"] + "=" + image_tag)
+    service_name = target["service_name"]
+    service_arg = shlex.quote(service_name)
+    override_file = ".custom-github.override.yaml"
+    release_file = ".custom-github.release"
+
+    yaml_lines = [
+        "services:",
+        f"  {_yaml_quote(service_name)}:",
+        f"    image: {_yaml_quote(image_tag)}",
+    ]
+    printf_args = " ".join(shlex.quote(line) for line in yaml_lines)
+    release_value = shlex.quote(image_tag)
+
     return (
         "set -eu; "
         f"cd {compose_dir}; "
-        f"printf '%s\\n' {env_line} > {env_file}; "
-        f"docker compose --env-file {env_file} -f {compose_file} up -d --no-build {service_name}; "
-        f"docker compose --env-file {env_file} -f {compose_file} ps {service_name}"
+        f"printf '%s\\n' {printf_args} > {override_file}; "
+        f"printf '%s\\n' {release_value} > {release_file}; "
+        f"docker compose -f {compose_file} -f {override_file} up -d --no-build {service_arg}; "
+        f"docker compose -f {compose_file} -f {override_file} ps {service_arg}"
     )
 
 
 def read_previous_image(server: dict[str, Any], target: dict[str, Any]) -> str | None:
     compose_dir = shlex.quote(target["compose_dir"])
-    env_key = target["image_env_key"]
     command = (
         "set -eu; "
         f"cd {compose_dir}; "
-        "if [ -f .custom-github.env ]; then "
-        f"grep -E '^{env_key}=' .custom-github.env | tail -n1 | cut -d= -f2- || true; "
-        "fi"
+        "if [ -f .custom-github.release ]; then cat .custom-github.release; fi"
     )
     code, output = ssh_command(server, command, timeout=20)
     if code != 0:
@@ -307,7 +319,7 @@ def execute_deployment(
         set_status("transferring", "Streaming immutable Docker image to VPS")
         append_log(transfer_docker_image(server, image_tag))
 
-        set_status("deploying", "Activating release with Docker Compose --no-build")
+        set_status("deploying", "Activating release with Docker Compose override + --no-build")
         append_log(activate_release(server, target, image_tag))
 
         set_status("health-check", f"Checking {target['health_url']}")

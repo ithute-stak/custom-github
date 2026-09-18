@@ -7,50 +7,58 @@
   <style>
     :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color-scheme: dark; }
     * { box-sizing: border-box; }
-    body { margin: 0; background: #0d1117; color: #e6edf3; }
-    header { border-bottom: 1px solid #30363d; padding: 18px 28px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:#0d1117; }
-    h1 { font-size: 20px; margin: 0; }
+    body { margin:0; background:#0d1117; color:#e6edf3; }
+    header { border-bottom:1px solid #30363d; padding:18px 28px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:20; background:rgba(13,17,23,.96); backdrop-filter:blur(10px); }
+    h1 { font-size:20px; margin:0; } h2 { font-size:18px; } h3 { margin:0 0 5px; }
     .muted { color:#8b949e; }
-    main { max-width: 1180px; margin: 0 auto; padding: 28px; }
-    .hero { display:grid; grid-template-columns: 1.4fr 1fr; gap:20px; margin-bottom:24px; }
-    .panel, .project { border:1px solid #30363d; background:#161b22; border-radius:12px; padding:20px; }
-    .panel h2 { margin-top:0; font-size:18px; }
-    form { display:grid; gap:12px; }
-    input { width:100%; border:1px solid #30363d; background:#0d1117; color:#e6edf3; border-radius:7px; padding:10px 12px; }
+    main { max-width:1240px; margin:0 auto; padding:28px; }
+    .hero { display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:16px; margin-bottom:24px; }
+    .panel,.project,.server { border:1px solid #30363d; background:#161b22; border-radius:12px; padding:18px; }
+    .panel h2 { margin-top:0; }
+    form { display:grid; gap:10px; }
+    input,select { width:100%; border:1px solid #30363d; background:#0d1117; color:#e6edf3; border-radius:7px; padding:10px 12px; }
+    label { font-size:12px; color:#8b949e; display:grid; gap:5px; }
     button { border:1px solid #30363d; border-radius:7px; padding:9px 13px; font-weight:650; cursor:pointer; background:#21262d; color:#e6edf3; }
     button.primary { background:#238636; border-color:#2ea043; }
     button.deploy { background:#1f6feb; border-color:#388bfd; }
-    button:disabled { opacity:.45; cursor:not-allowed; }
+    button.danger { border-color:#da3633; color:#ff7b72; }
+    button:disabled { opacity:.42; cursor:not-allowed; }
     .actions { display:flex; gap:8px; flex-wrap:wrap; }
-    .projects { display:grid; gap:14px; }
-    .project-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
-    .project h3 { margin:0 0 5px; font-size:18px; }
-    .badge { display:inline-flex; border-radius:999px; padding:4px 9px; border:1px solid #30363d; font-size:12px; font-weight:700; }
+    .projects,.servers { display:grid; gap:14px; }
+    .servers { grid-template-columns:repeat(auto-fit,minmax(270px,1fr)); margin-bottom:26px; }
+    .project-head,.server-head,.section-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
+    .section-head { align-items:center; margin:20px 0 10px; }
+    .badge { display:inline-flex; border-radius:999px; padding:4px 9px; border:1px solid #30363d; font-size:12px; font-weight:700; white-space:nowrap; }
     .green { color:#3fb950; border-color:#238636; background:#0f2d17; }
     .red { color:#f85149; border-color:#da3633; background:#3d1413; }
     .yellow { color:#d29922; border-color:#9e6a03; background:#2d220b; }
-    .grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap:12px; margin:16px 0; }
-    .metric { background:#0d1117; border:1px solid #21262d; border-radius:8px; padding:12px; min-width:0; }
+    .blue { color:#79c0ff; border-color:#1f6feb; background:#0b2342; }
+    .grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin:16px 0; }
+    .metric { background:#0d1117; border:1px solid #21262d; border-radius:8px; padding:11px; min-width:0; }
     .metric small { display:block; color:#8b949e; margin-bottom:5px; }
     code { color:#79c0ff; word-break:break-all; }
-    #notice { min-height: 24px; margin:0 0 16px; color:#8b949e; }
-    @media (max-width:800px) { .hero { grid-template-columns:1fr; } .grid { grid-template-columns:1fr 1fr; } }
+    #notice { min-height:24px; margin:0 0 16px; color:#8b949e; }
+    details { margin-top:14px; border-top:1px solid #30363d; padding-top:12px; }
+    summary { cursor:pointer; font-weight:650; }
+    .target-form { margin-top:12px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+    .target-form .wide { grid-column:span 2; }
+    .target-form button { align-self:end; }
+    .deploy-status { margin:10px 0 0; padding:10px 12px; border-radius:8px; border:1px solid #21262d; background:#0d1117; font-size:13px; }
+    .rule { font-size:14px; line-height:1.5; }
+    @media (max-width:950px) { .hero { grid-template-columns:1fr; } .grid { grid-template-columns:1fr 1fr; } .target-form { grid-template-columns:1fr; } .target-form .wide { grid-column:span 1; } }
   </style>
 </head>
 <body>
 <header>
-  <div>
-    <h1>Custom GitHub</h1>
-    <div class="muted">Local CI/CD control plane</div>
-  </div>
-  <span class="badge green">LOCAL</span>
+  <div><h1>Custom GitHub</h1><div class="muted">Local CI/CD + controlled production deployment</div></div>
+  <span class="badge green">LOCAL CONTROL PLANE</span>
 </header>
 <main>
   <section class="hero">
     <div class="panel">
-      <h2>Deployment rule</h2>
-      <p>GitHub stores the source. This machine synchronizes it, runs local checks, and only enables <strong>Deploy Latest</strong> when the exact latest commit is green.</p>
-      <p class="muted">Production VPS machines will receive pre-built releases only. They will not run source builds.</p>
+      <h2>Production rule</h2>
+      <div class="rule">GitHub stores source code. This PC syncs the repository, runs tests, builds the immutable Docker image, checks VPS capacity and only then allows <strong>Deploy Latest</strong>.</div>
+      <p class="muted">The production VPS never runs <code>git clone</code>, <code>npm build</code>, <code>dotnet build</code> or <code>docker build</code>.</p>
     </div>
     <div class="panel">
       <h2>Add repository</h2>
@@ -61,21 +69,43 @@
         <button class="primary" type="submit">Add Repository</button>
       </form>
     </div>
+    <div class="panel">
+      <h2>Add production VPS</h2>
+      <form id="server-form">
+        <input id="server_name" placeholder="production-01" required />
+        <input id="server_host" placeholder="203.0.113.10" required />
+        <input id="server_user" value="deploy" placeholder="deploy" required />
+        <input id="identity_file" placeholder="~/.ssh/custom_github_deploy" />
+        <button class="primary" type="submit">Register VPS</button>
+      </form>
+    </div>
   </section>
 
   <div id="notice"></div>
+
+  <div class="section-head"><h2>Servers</h2><span class="muted">SSH keys stay on this PC; private key contents are never stored in the database.</span></div>
+  <section id="servers" class="servers"></section>
+
+  <div class="section-head"><h2>Repositories & deployments</h2><span class="muted">Deploy Latest always means the exact latest green Docker image.</span></div>
   <section id="projects" class="projects"></section>
 </main>
 <script>
 const $projects = document.getElementById('projects');
+const $servers = document.getElementById('servers');
 const $notice = document.getElementById('notice');
+let serversCache = [];
 
+function esc(value) { return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
 function shortSha(sha) { return sha ? sha.slice(0, 8) : '—'; }
-function statusBadge(project) {
-  if (!project.latest_run) return '<span class="badge yellow">NOT TESTED</span>';
-  if (project.deployable) return '<span class="badge green">READY TO DEPLOY</span>';
-  if (project.latest_run.status === 'failed') return '<span class="badge red">FAILED</span>';
-  return '<span class="badge yellow">NOT DEPLOYABLE</span>';
+function badge(text, cls='yellow') { return `<span class="badge ${cls}">${esc(text)}</span>`; }
+function projectBadge(p) {
+  if (p.latest_deployment && ['queued','preflight','transferring','deploying','health-check'].includes(p.latest_deployment.status)) return badge(p.latest_deployment.status.toUpperCase(), 'blue');
+  if (!p.latest_run) return badge('NOT TESTED');
+  if (p.deployable) return badge('READY TO DEPLOY', 'green');
+  if (p.latest_run.status === 'failed') return badge('FAILED', 'red');
+  if (!p.target) return badge('TARGET REQUIRED');
+  if (!p.latest_green_image) return badge('DOCKER IMAGE REQUIRED');
+  return badge('NOT DEPLOYABLE');
 }
 async function api(url, options={}) {
   const response = await fetch(url, {headers:{'Content-Type':'application/json'}, ...options});
@@ -85,7 +115,28 @@ async function api(url, options={}) {
   return body;
 }
 function note(message) { $notice.textContent = message; }
-async function refresh() {
+function serverOptions(selected) {
+  return serversCache.map(s => `<option value="${s.id}" ${Number(selected)===Number(s.id)?'selected':''}>${esc(s.name)} · ${esc(s.host)}</option>`).join('');
+}
+function deploymentText(d) {
+  if (!d) return 'No deployment history yet.';
+  const terminal = ['success','failed','rolled-back','rollback-failed'].includes(d.status);
+  return `#${d.id} · ${esc(d.status.toUpperCase())} · ${shortSha(d.commit_sha)}${d.status_message ? ` · ${esc(d.status_message)}` : ''}${terminal && d.finished_at ? ` · ${new Date(d.finished_at).toLocaleString()}` : ''}`;
+}
+async function refreshServers() {
+  serversCache = await api('/api/servers');
+  if (!serversCache.length) {
+    $servers.innerHTML = '<div class="panel muted">No production VPS registered yet.</div>';
+    return;
+  }
+  $servers.innerHTML = serversCache.map(s => `
+    <article class="server">
+      <div class="server-head"><div><h3>${esc(s.name)}</h3><div class="muted">${esc(s.ssh_user)}@${esc(s.host)}:${s.port}</div></div>${badge(`DISK < ${s.max_disk_percent}%`, 'blue')}</div>
+      <p class="muted">Memory deployment limit: ${s.max_memory_percent}%<br>SSH identity: ${esc(s.identity_file || 'default SSH agent/key')}</p>
+      <div class="actions"><button onclick="checkServer(${s.id}, '${esc(s.name)}')">Check VPS</button></div>
+    </article>`).join('');
+}
+async function refreshProjects() {
   const projects = await api('/api/projects');
   if (!projects.length) {
     $projects.innerHTML = '<div class="panel muted">No repositories registered yet.</div>';
@@ -94,47 +145,78 @@ async function refresh() {
   $projects.innerHTML = projects.map(p => `
     <article class="project">
       <div class="project-head">
-        <div>
-          <h3>${p.name}</h3>
-          <div class="muted">${p.github_url} · ${p.branch}</div>
-        </div>
-        ${statusBadge(p)}
+        <div><h3>${esc(p.name)}</h3><div class="muted">${esc(p.github_url)} · ${esc(p.branch)}</div></div>
+        ${projectBadge(p)}
       </div>
       <div class="grid">
         <div class="metric"><small>GitHub latest</small><code>${shortSha(p.latest_sha)}</code></div>
-        <div class="metric"><small>Latest pipeline</small>${p.latest_run ? p.latest_run.status.toUpperCase() : '—'}</div>
-        <div class="metric"><small>Latest green</small><code>${shortSha(p.latest_green_sha)}</code></div>
+        <div class="metric"><small>Latest pipeline</small>${p.latest_run ? esc(p.latest_run.status.toUpperCase()) : '—'}</div>
+        <div class="metric"><small>Green image</small><code>${p.latest_green_image ? esc(p.latest_green_image) : '—'}</code></div>
+        <div class="metric"><small>Target VPS</small>${p.target ? esc(p.target.server_name) : '—'}</div>
         <div class="metric"><small>Deploy latest</small>${p.deployable ? 'ENABLED' : 'BLOCKED'}</div>
       </div>
       <div class="actions">
-        <button onclick="syncProject(${p.id}, '${p.name}')">Sync GitHub</button>
-        <button onclick="runPipeline(${p.id}, '${p.name}')">Run Pipeline</button>
-        <button class="deploy" ${p.deployable ? '' : 'disabled'} onclick="deployLatest(${p.id}, '${p.name}')">Deploy Latest</button>
+        <button onclick="syncProject(${p.id}, '${esc(p.name)}')">Sync GitHub</button>
+        <button onclick="runPipeline(${p.id}, '${esc(p.name)}')">Run Pipeline</button>
+        <button class="deploy" ${p.deployable ? '' : 'disabled'} onclick="deployLatest(${p.id}, '${esc(p.name)}')">Deploy Latest</button>
       </div>
+      <div class="deploy-status"><strong>Latest deployment:</strong> ${deploymentText(p.latest_deployment)}</div>
+      <details>
+        <summary>Deployment target</summary>
+        ${serversCache.length ? `
+        <form class="target-form" onsubmit="saveTarget(event, ${p.id}, '${esc(p.name)}')">
+          <label>VPS<select name="server_id" required>${serverOptions(p.target?.server_id)}</select></label>
+          <label class="wide">Compose directory<input name="compose_dir" value="${esc(p.target?.compose_dir || `/opt/apps/${p.name}`)}" required /></label>
+          <label>Compose file<input name="compose_file" value="${esc(p.target?.compose_file || 'compose.yaml')}" required /></label>
+          <label>Service name<input name="service_name" value="${esc(p.target?.service_name || p.name)}" required /></label>
+          <label>Image variable<input name="image_env_key" value="${esc(p.target?.image_env_key || 'CUSTOM_GITHUB_IMAGE')}" required /></label>
+          <label class="wide">Health URL<input name="health_url" value="${esc(p.target?.health_url || '')}" placeholder="https://app.example.com/health" required /></label>
+          <label>Required RAM MB<input name="required_memory_mb" type="number" value="${p.target?.required_memory_mb || 512}" min="64" required /></label>
+          <label>Required disk MB<input name="required_disk_mb" type="number" value="${p.target?.required_disk_mb || 2048}" min="128" required /></label>
+          <button class="primary" type="submit">Save Target</button>
+        </form>` : '<p class="muted">Register a VPS first.</p>'}
+      </details>
     </article>
   `).join('');
 }
+async function refresh() { await refreshServers(); await refreshProjects(); }
+async function checkServer(id, name) {
+  try {
+    note(`Checking ${name}…`); const r = await api(`/api/servers/${id}/check`, {method:'POST'}); const m=r.metrics;
+    note(`${name} online · RAM ${m.memory_used_percent}% (${m.mem_available_mb} MB free) · disk ${m.disk_used_percent}% (${m.disk_available_mb} MB free) · CPU load ${m.load_1}/${m.cpu_count}.`);
+  } catch(e) { note(e.message); }
+}
 async function syncProject(id, name) {
-  try { note(`Syncing ${name} from GitHub…`); const r = await api(`/api/projects/${id}/sync`, {method:'POST'}); note(`${name} synced at ${shortSha(r.commit_sha)}.`); await refresh(); }
-  catch (e) { note(e.message); }
+  try { note(`Syncing ${name} from GitHub…`); const r=await api(`/api/projects/${id}/sync`,{method:'POST'}); note(`${name} synced at ${shortSha(r.commit_sha)}.`); await refreshProjects(); }
+  catch(e){ note(e.message); }
 }
 async function runPipeline(id, name) {
-  try { note(`Running local pipeline for ${name}…`); const r = await api(`/api/projects/${id}/pipeline`, {method:'POST'}); note(`${name} pipeline ${r.status.toUpperCase()} at ${shortSha(r.commit_sha)}.`); await refresh(); }
-  catch (e) { note(e.message); }
+  try { note(`Running local pipeline for ${name}…`); const r=await api(`/api/projects/${id}/pipeline`,{method:'POST'}); note(`${name} pipeline ${r.status.toUpperCase()} at ${shortSha(r.commit_sha)}${r.image_tag ? ` · image ${r.image_tag}` : ''}.`); await refreshProjects(); }
+  catch(e){ note(e.message); }
 }
 async function deployLatest(id, name) {
-  try { note(`Approving latest green ${name} release…`); const r = await api(`/api/projects/${id}/deploy-latest`, {method:'POST'}); note(`${name}: ${r.message}`); await refresh(); }
-  catch (e) { note(e.message); }
+  if (!confirm(`Deploy the latest GREEN immutable image for ${name} to production?`)) return;
+  try { note(`Queueing controlled deployment for ${name}…`); const r=await api(`/api/projects/${id}/deploy-latest`,{method:'POST'}); note(`${name}: deployment #${r.deployment_id} queued for ${shortSha(r.commit_sha)}.`); await refreshProjects(); }
+  catch(e){ note(e.message); }
 }
-document.getElementById('project-form').addEventListener('submit', async (event) => {
+async function saveTarget(event, projectId, name) {
+  event.preventDefault(); const fd=new FormData(event.target);
+  const payload={server_id:Number(fd.get('server_id')),compose_dir:fd.get('compose_dir'),compose_file:fd.get('compose_file'),service_name:fd.get('service_name'),image_env_key:fd.get('image_env_key'),health_url:fd.get('health_url'),required_memory_mb:Number(fd.get('required_memory_mb')),required_disk_mb:Number(fd.get('required_disk_mb'))};
+  try { await api(`/api/projects/${projectId}/deployment-target`,{method:'PUT',body:JSON.stringify(payload)}); note(`${name} deployment target saved.`); await refreshProjects(); }
+  catch(e){ note(e.message); }
+}
+document.getElementById('project-form').addEventListener('submit', async event => {
   event.preventDefault();
-  try {
-    const payload = {name:document.getElementById('name').value, github_url:document.getElementById('github_url').value, branch:document.getElementById('branch').value};
-    await api('/api/projects', {method:'POST', body:JSON.stringify(payload)});
-    event.target.reset(); document.getElementById('branch').value='main'; note(`${payload.name} added.`); await refresh();
-  } catch (e) { note(e.message); }
+  try { const payload={name:document.getElementById('name').value,github_url:document.getElementById('github_url').value,branch:document.getElementById('branch').value}; await api('/api/projects',{method:'POST',body:JSON.stringify(payload)}); event.target.reset(); document.getElementById('branch').value='main'; note(`${payload.name} added.`); await refreshProjects(); }
+  catch(e){ note(e.message); }
+});
+document.getElementById('server-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  try { const payload={name:document.getElementById('server_name').value,host:document.getElementById('server_host').value,ssh_user:document.getElementById('server_user').value,identity_file:document.getElementById('identity_file').value || null}; await api('/api/servers',{method:'POST',body:JSON.stringify(payload)}); event.target.reset(); document.getElementById('server_user').value='deploy'; note(`${payload.name} registered.`); await refresh(); }
+  catch(e){ note(e.message); }
 });
 refresh().catch(e => note(e.message));
+setInterval(() => refreshProjects().catch(() => {}), 5000);
 </script>
 </body>
 </html>

@@ -6,12 +6,14 @@ The local PC is allowed to fetch source, install dependencies, run tests and bui
 
 ## Required production pattern
 
-A production Compose service must use an image variable and must not contain a `build:` section for the application being controlled by Custom GitHub.
+The production application must be runnable by Docker Compose and must not depend on building source code on the VPS.
+
+A normal production service can keep its existing environment and settings, for example:
 
 ```yaml
 services:
   app:
-    image: ${CUSTOM_GITHUB_IMAGE:?CUSTOM_GITHUB_IMAGE is required}
+    image: company/app:bootstrap
     restart: unless-stopped
     mem_limit: 1g
     cpus: 1.0
@@ -19,22 +21,34 @@ services:
       - "127.0.0.1:8080:8080"
 ```
 
-Custom GitHub writes only this release metadata file in the configured Compose directory:
+Custom GitHub does **not** replace the application's normal `.env` file. Instead, it generates two small controller-owned files in the configured Compose directory:
 
 ```text
-.custom-github.env
+.custom-github.override.yaml
+.custom-github.release
 ```
 
-Its content is intentionally small:
+The override contains only the selected service image:
 
-```dotenv
-CUSTOM_GITHUB_IMAGE=custom-github/loanhub:0123456789ab
+```yaml
+services:
+  app:
+    image: custom-github/loanhub:0123456789ab
 ```
 
-The deployment command uses:
+The release marker contains the active immutable image tag and is used for deployment history and rollback:
+
+```text
+custom-github/loanhub:0123456789ab
+```
+
+The deployment command effectively uses:
 
 ```bash
-docker compose --env-file .custom-github.env -f compose.yaml up -d --no-build app
+docker compose \
+  -f compose.yaml \
+  -f .custom-github.override.yaml \
+  up -d --no-build app
 ```
 
 `--no-build` is a hard architectural boundary. A production release must fail rather than silently build source code on the VPS.
@@ -115,7 +129,7 @@ This avoids Git clones, package installations, Docker build caches and source-bu
 
 ## Health verification and automatic rollback
 
-Before activating the new release, Custom GitHub reads the previous image from `.custom-github.env` and records it in deployment history.
+Before activating a new release, Custom GitHub reads the previous image from `.custom-github.release` and records it in deployment history.
 
 After the new image is activated, the configured health URL is checked repeatedly. If the release does not become healthy, the controller attempts to reactivate the previous image and checks health again.
 
@@ -134,6 +148,15 @@ rollback-failed
 ```
 
 A `rollback-failed` state requires operator attention and must never be presented as a successful release.
+
+## Project-scoped image retention
+
+After a healthy deployment, Custom GitHub keeps:
+
+- the current image;
+- the immediate previous image for rollback.
+
+It considers only tags belonging to that project's `custom-github/<project>` image repository when removing older releases. It does not run broad volume or system pruning as part of deployment.
 
 ## Persistent data
 
@@ -162,11 +185,10 @@ Before broad production use, the platform should add:
 
 1. dedicated isolated runner containers/VMs rather than executing repository code in the API process;
 2. database backup hooks before schema-changing deployments;
-3. manual rollback controls;
-4. image-retention policy that preserves the current and previous releases;
-5. deploy-user/agent hardening so Docker access is narrowly scoped;
-6. authentication and CSRF protection before the dashboard is exposed beyond localhost;
-7. encrypted secret management;
-8. WebSocket/server-sent live job logs;
-9. deployment cancellation and queue controls;
-10. signed release provenance and artifact hashes.
+3. manual rollback controls and a release browser;
+4. deploy-user/agent hardening so Docker access is narrowly scoped;
+5. authentication and CSRF protection before the dashboard is exposed beyond localhost;
+6. encrypted secret management;
+7. WebSocket/server-sent live job logs;
+8. deployment cancellation and queue controls;
+9. signed release provenance and artifact hashes.

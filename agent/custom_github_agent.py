@@ -199,7 +199,7 @@ def enroll() -> dict[str, Any]:
         "hostname": socket.gethostname(),
         "platform": platform.platform(),
     }
-    response = _request("/agent/v1/enroll", method="POST", payload=payload)
+    response = _request("/auth/agent/v1/enroll", method="POST", payload=payload)
     if not response.get("agent_token") or not response.get("agent_id"):
         raise RuntimeError("Enrollment response did not contain agent credentials")
     state = {
@@ -215,7 +215,7 @@ def enroll() -> dict[str, Any]:
 
 def heartbeat(state: dict[str, Any]) -> None:
     _request(
-        "/agent/v1/heartbeat",
+        "/auth/agent/v1/heartbeat",
         method="POST",
         token=state["agent_token"],
         payload={
@@ -261,7 +261,7 @@ def execute_command(command: dict[str, Any]) -> tuple[bool, dict[str, Any], str 
 
 
 def poll_and_execute(state: dict[str, Any]) -> None:
-    response = _request("/agent/v1/commands", token=state["agent_token"])
+    response = _request("/auth/agent/v1/commands", token=state["agent_token"])
     command = response.get("command")
     if not command:
         return
@@ -269,7 +269,7 @@ def poll_and_execute(state: dict[str, Any]) -> None:
     ok, result, error = execute_command(command)
     try:
         _request(
-            "/agent/v1/results",
+            "/auth/agent/v1/results",
             method="POST",
             token=state["agent_token"],
             payload={"command_id": cid, "ok": ok, "result": result, "error": error},

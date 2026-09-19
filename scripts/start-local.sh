@@ -15,4 +15,4 @@ python -m pip install -r requirements.txt
 export CUSTOM_GITHUB_DATA_DIR="${CUSTOM_GITHUB_DATA_DIR:-$ROOT_DIR/data}"
 export CUSTOM_GITHUB_WORKSPACE_ROOT="${CUSTOM_GITHUB_WORKSPACE_ROOT:-$ROOT_DIR/data/workspaces}"
 
-exec uvicorn app.main:app --host 127.0.0.1 --port "${CUSTOM_GITHUB_PORT:-8787}" --reload
+exec uvicorn app.platform:app --host 127.0.0.1 --port "${CUSTOM_GITHUB_PORT:-8787}" --reload

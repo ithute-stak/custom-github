@@ -12,6 +12,7 @@ from app.database_manager import install_database_routes
 from app.docker_cleanup import install_docker_cleanup_routes
 from app.main import APP_ROOT, DASHBOARD_PATH, app, audit, db, server_or_404
 from app.maintenance import install_maintenance_routes
+from app.production_contract import install_production_contract_routes
 from app.server_registry import install_server_registry_routes
 from app.vps import install_vps_routes
 
@@ -54,6 +55,13 @@ install_server_registry_routes(
     audit_fn=audit,
     app_root=APP_ROOT,
 )
+install_production_contract_routes(
+    app,
+    db_factory=db,
+    server_lookup=server_or_404,
+    audit_fn=audit,
+    app_root=APP_ROOT,
+)
 
 # The base module originally owns GET /. VPS management also installs GET /vps/{server_id}.
 # Replace only those two HTML routes here; API and WebSocket routes remain untouched.
@@ -77,7 +85,7 @@ _CONTAINER_INVENTORY_DASHBOARD = r"""
     if (!manage) return;
     manage.insertAdjacentHTML('afterend', `
       <section class="section" id="containerInventorySection">
-        <div class="section-title"><div><h2>Docker workload inventory</h2><div class="sub">Explains every running container by Compose stack and registered Custom GitHub project. “Review required” does not mean safe to delete.</div></div><button class="btn" id="inventoryRefreshBtn">↻ Analyze containers</button></div>
+        <div class="section-title"><div><h2>Docker workload inventory</h2><div class="sub">Explains every running container by Compose stack and registered Custom GitHub project. “Review required” does not mean safe to delete.</div></div><div style="display:flex;gap:8px"><a class="btn" id="productionContractLink" href="#">Production Contract</a><button class="btn" id="inventoryRefreshBtn">↻ Analyze containers</button></div></div>
         <div class="grid">
           <div class="card c3 metric"><div class="label">Running on selected VPS</div><div class="value" id="invTotal">—</div><div class="caption">All running containers</div></div>
           <div class="card c3 metric"><div class="label">Registered projects</div><div class="value" id="invRegistered">—</div><div class="caption">Mapped to registered project stacks</div></div>
@@ -102,6 +110,7 @@ _CONTAINER_INVENTORY_DASHBOARD = r"""
     ensureSection();
     const id = selectedId();
     const inv = inventories.get(Number(id));
+    const contractLink=document.getElementById('productionContractLink'); if(contractLink && id) contractLink.href=`/vps/${id}/production-contract`;
     const set = (name, value) => { const el=document.getElementById(name); if(el) el.textContent=value; };
     if (!inv) {
       ['invTotal','invRegistered','invStacks','invReview'].forEach(x=>set(x,'—'));
@@ -190,6 +199,7 @@ def vps_dashboard(server_id: int) -> str:
     enhanced_toolbar = (
         '<div class="toolbar"><button class="btn primary" onclick="loadDocker()">↻ Refresh Docker</button>'
         '<button class="btn" onclick="loadDockerStorage()">Storage usage</button>'
+        f'<a class="btn" href="/vps/{server_id}/production-contract">Production Contract</a>'
         f'<a class="btn" href="/vps/{server_id}/databases">Database Manager</a>'
         f'<a class="btn" href="/vps/{server_id}/maintenance">Maintenance Center</a>'
         f'<a class="btn danger" href="/vps/{server_id}/docker-cleanup">Cleanup unused images</a></div>'
@@ -198,6 +208,7 @@ def vps_dashboard(server_id: int) -> str:
     maintenance_nav = (
         '<div class="nav-title">Administration</div>'
         '<nav>'
+        f'<a class="navbtn" href="/vps/{server_id}/production-contract"><span><span class="navico">✓</span>Production Contract</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/databases"><span><span class="navico">▦</span>Databases</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/maintenance"><span><span class="navico">◈</span>Maintenance Center</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/docker-cleanup"><span><span class="navico">⌫</span>Docker Cleanup</span></a>'

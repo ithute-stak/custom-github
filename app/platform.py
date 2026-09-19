@@ -7,6 +7,7 @@ surfaces and keeps the individual VPS capabilities in focused modules.
 
 from fastapi.responses import HTMLResponse
 
+from app.applications import install_application_routes
 from app.backup_manager import install_backup_routes
 from app.container_inventory import install_container_inventory_routes
 from app.container_inventory_ui import CONTAINER_INVENTORY_DASHBOARD
@@ -14,15 +15,17 @@ from app.database_manager import install_database_routes
 from app.docker_cleanup import install_docker_cleanup_routes
 from app.domain_manager import install_domain_routes
 from app.file_manager_enhancements import FILE_MANAGER_ENHANCEMENT, install_file_manager_enhancements_routes
-from app.main import APP_ROOT, DASHBOARD_PATH, app, audit, db, server_or_404
+from app.main import APP_ROOT, DASHBOARD_PATH, DATA_DIR, app, audit, db, server_or_404
 from app.maintenance import install_maintenance_routes
 from app.observability import install_observability_routes
 from app.production_contract import install_production_contract_routes
 from app.security import install_security_routes
 from app.security_bootstrap_guard import install_bootstrap_security_boundary
+from app.security_scanner import install_security_scanner_routes
 from app.security_websocket import secure_terminal_websocket
 from app.server_registry import install_server_registry_routes
 from app.system_admin import install_system_admin_routes
+from app.vault import install_vault_routes
 from app.vps import install_vps_routes
 
 CONTROL_CENTER_PATH = APP_ROOT / "app" / "static" / "control-center.html"
@@ -76,6 +79,9 @@ install_domain_routes(app, server_lookup=server_or_404, audit_fn=audit)
 install_backup_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_system_admin_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_observability_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+install_security_scanner_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+install_application_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+install_vault_routes(app, db_factory=db, audit_fn=audit, data_dir=DATA_DIR)
 # Install the security middleware after all management routes are registered so one policy
 # consistently protects the full HTTP surface. It remains bootstrap-safe until an Owner exists.
 install_security_routes(app, db_factory=db, audit_fn=audit)
@@ -101,7 +107,11 @@ def infrastructure_control_center() -> str:
     html = html.replace(old_link, new_link)
     if "/security" not in html:
         marker = new_link
-        security_link = marker + '<a href="/security"><span class="ico">◈</span>Security Center <span class="navbadge">RBAC</span></a>'
+        security_link = (
+            marker
+            + '<a href="/security"><span class="ico">◈</span>Security Center <span class="navbadge">RBAC</span></a>'
+            + '<a href="/vault"><span class="ico">◆</span>Secrets Vault <span class="navbadge">ENCRYPTED</span></a>'
+        )
         html = html.replace(marker, security_link, 1)
     return html.replace("</body>", CONTAINER_INVENTORY_DASHBOARD + "\n</body>")
 
@@ -121,9 +131,11 @@ def vps_dashboard(server_id: int) -> str:
     enhanced_toolbar = (
         '<div class="toolbar"><button class="btn primary" onclick="loadDocker()">↻ Refresh Docker</button>'
         '<button class="btn" onclick="loadDockerStorage()">Storage usage</button>'
+        f'<a class="btn" href="/vps/{server_id}/applications">Applications</a>'
         f'<a class="btn" href="/vps/{server_id}/production-contract">Production Contract</a>'
         f'<a class="btn" href="/vps/{server_id}/databases">Database Manager</a>'
         f'<a class="btn" href="/vps/{server_id}/observability">Monitoring</a>'
+        f'<a class="btn" href="/vps/{server_id}/security-scan">Security Scan</a>'
         f'<a class="btn" href="/vps/{server_id}/domains">Domains & SSL</a>'
         f'<a class="btn" href="/vps/{server_id}/backups">Backups</a>'
         f'<a class="btn" href="/vps/{server_id}/system-admin">System Admin</a>'
@@ -132,11 +144,13 @@ def vps_dashboard(server_id: int) -> str:
     )
     html = html.replace(docker_toolbar, enhanced_toolbar)
     administration_nav = (
-        '<div class="nav-title">Administration</div>'
+        '<div class="nav-title">Applications & Administration</div>'
         '<nav>'
+        f'<a class="navbtn" href="/vps/{server_id}/applications"><span><span class="navico">▣</span>Applications</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/production-contract"><span><span class="navico">✓</span>Production Contract</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/databases"><span><span class="navico">▦</span>Databases</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/observability"><span><span class="navico">⌁</span>Monitoring & Incidents</span></a>'
+        f'<a class="navbtn" href="/vps/{server_id}/security-scan"><span><span class="navico">盾</span>Security Scanner</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/domains"><span><span class="navico">◎</span>Domains & SSL</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/backups"><span><span class="navico">↺</span>Backup & Restore</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/system-admin"><span><span class="navico">⚙</span>System Admin</span></a>'
@@ -144,6 +158,7 @@ def vps_dashboard(server_id: int) -> str:
         f'<a class="navbtn" href="/vps/{server_id}/docker-cleanup"><span><span class="navico">⌫</span>Docker Cleanup</span></a>'
         '<a class="navbtn" href="/server-registry"><span><span class="navico">▤</span>Server Registry</span></a>'
         '<a class="navbtn" href="/security"><span><span class="navico">◆</span>Security Center</span></a>'
+        '<a class="navbtn" href="/vault"><span><span class="navico">◇</span>Secrets Vault</span></a>'
         '</nav>'
     )
     html = html.replace('<div class="aside-foot">', administration_nav + '<div class="aside-foot">', 1)

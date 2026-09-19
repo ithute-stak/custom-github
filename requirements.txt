@@ -3,3 +3,4 @@ uvicorn[standard]==0.53.0
 pydantic==2.13.0
 pytest==9.1.1
 httpx2==2.13.0
+cryptography>=45.0.0,<47.0.0

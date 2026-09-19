@@ -1,5 +1,13 @@
 import os
+import shutil
 from pathlib import Path
+
+TEST_DATA = Path("/tmp/custom-github-vps-test-data")
+TEST_WORKSPACES = Path("/tmp/custom-github-vps-test-workspaces")
+shutil.rmtree(TEST_DATA, ignore_errors=True)
+shutil.rmtree(TEST_WORKSPACES, ignore_errors=True)
+os.environ.setdefault("CUSTOM_GITHUB_DATA_DIR", str(TEST_DATA))
+os.environ.setdefault("CUSTOM_GITHUB_WORKSPACE_ROOT", str(TEST_WORKSPACES))
 
 from fastapi.testclient import TestClient
 
@@ -88,6 +96,17 @@ def test_platform_entrypoint_is_used_by_local_start_script() -> None:
     script = Path("scripts/start-local.sh").read_text(encoding="utf-8")
     assert "app.platform:app" in script
     assert "--host 127.0.0.1" in script
+
+
+def test_main_dashboard_links_registered_servers_to_vps_manager() -> None:
+    server_id = ensure_server()
+    with TestClient(app) as client:
+        response = client.get("/")
+    assert response.status_code == 200
+    assert "vps-manager-dashboard-enhancement" in response.text
+    assert "Open VPS Manager" in response.text
+    assert f"/vps/${{match[1]}}" in response.text
+    assert server_id > 0
 
 
 def test_management_routes_remain_local_first() -> None:

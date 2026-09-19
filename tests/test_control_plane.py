@@ -1,18 +1,10 @@
 import os
-import shutil
 from pathlib import Path
-
-TEST_DATA = Path("/tmp/custom-github-test-data")
-TEST_WORKSPACES = Path("/tmp/custom-github-test-workspaces")
-shutil.rmtree(TEST_DATA, ignore_errors=True)
-shutil.rmtree(TEST_WORKSPACES, ignore_errors=True)
-os.environ["CUSTOM_GITHUB_DATA_DIR"] = str(TEST_DATA)
-os.environ["CUSTOM_GITHUB_WORKSPACE_ROOT"] = str(TEST_WORKSPACES)
 
 from fastapi.testclient import TestClient
 
 from app.deployment import _compose_command, capacity_gate
-from app.main import app, db, init_db, utc_now
+from app.main import APP_ROOT, DATA_DIR, WORKSPACE_ROOT, app, db, init_db, utc_now
 
 
 init_db()
@@ -151,6 +143,10 @@ def test_target_rejects_non_http_health_url() -> None:
     assert response.status_code == 400
 
 
-def test_data_paths_are_not_repo_root() -> None:
-    assert Path(os.environ["CUSTOM_GITHUB_DATA_DIR"]).name == "custom-github-test-data"
-    assert Path(os.environ["CUSTOM_GITHUB_WORKSPACE_ROOT"]).name == "custom-github-test-workspaces"
+def test_data_paths_are_session_isolated_from_operator_state() -> None:
+    configured_data = Path(os.environ["CUSTOM_GITHUB_DATA_DIR"]).resolve()
+    configured_workspaces = Path(os.environ["CUSTOM_GITHUB_WORKSPACE_ROOT"]).resolve()
+    assert DATA_DIR.resolve() == configured_data
+    assert WORKSPACE_ROOT.resolve() == configured_workspaces
+    assert DATA_DIR.resolve() != (APP_ROOT / "data").resolve()
+    assert "custom-github-pytest-" in configured_data.parent.name

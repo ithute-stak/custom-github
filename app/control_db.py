@@ -131,9 +131,10 @@ class PostgresCompatConnection:
         return PostgresCursorProxy(self)
 
     def _ensure_transaction(self) -> None:
+        # psycopg starts the transaction automatically on the first statement when
+        # autocommit=False. SET LOCAL both starts it and pins the migrated schema.
         if self.raw.info.transaction_status == TransactionStatus.IDLE:
             with self.raw.cursor() as cur:
-                cur.execute("BEGIN")
                 cur.execute(pgsql.SQL("SET LOCAL search_path TO {}, public").format(pgsql.Identifier(self.schema)))
 
     @staticmethod
@@ -186,8 +187,10 @@ class PostgresCompatConnection:
             return cached
         self._ensure_transaction()
         with self.raw.cursor() as cur:
+            # psycopg treats every literal % in a parameterized query specially;
+            # %% is the escaped SQL wildcard passed to PostgreSQL.
             cur.execute(
-                "SELECT 1 FROM information_schema.columns WHERE table_schema=%s AND table_name=%s AND column_name='id' AND (is_identity='YES' OR column_default LIKE 'nextval(%') LIMIT 1",
+                "SELECT 1 FROM information_schema.columns WHERE table_schema=%s AND table_name=%s AND column_name='id' AND (is_identity='YES' OR column_default LIKE 'nextval(%%') LIMIT 1",
                 (self.schema, table),
             )
             found = cur.fetchone() is not None

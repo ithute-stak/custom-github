@@ -15,9 +15,11 @@ from app.database_manager import install_database_routes
 from app.docker_cleanup import install_docker_cleanup_routes
 from app.domain_manager import install_domain_routes
 from app.file_manager_enhancements import FILE_MANAGER_ENHANCEMENT, install_file_manager_enhancements_routes
+from app.fleet import install_fleet_routes
 from app.main import APP_ROOT, DASHBOARD_PATH, DATA_DIR, app, audit, db, server_or_404
 from app.maintenance import install_maintenance_routes
 from app.observability import install_observability_routes
+from app.offsite_backups import install_offsite_backup_routes
 from app.production_contract import install_production_contract_routes
 from app.security import install_security_routes
 from app.security_bootstrap_guard import install_bootstrap_security_boundary
@@ -77,10 +79,12 @@ install_production_contract_routes(
 )
 install_domain_routes(app, server_lookup=server_or_404, audit_fn=audit)
 install_backup_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+install_offsite_backup_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_system_admin_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_observability_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_security_scanner_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_application_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+install_fleet_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_vault_routes(app, db_factory=db, audit_fn=audit, data_dir=DATA_DIR)
 # Install the security middleware after all management routes are registered so one policy
 # consistently protects the full HTTP surface. It remains bootstrap-safe until an Owner exists.
@@ -103,7 +107,10 @@ for route in list(app.router.routes):
 def infrastructure_control_center() -> str:
     html = CONTROL_CENTER_PATH.read_text(encoding="utf-8")
     old_link = '<a href="#fleet"><span class="ico">▤</span>VPS Servers <span class="navbadge">LIVE</span></a>'
-    new_link = '<a href="/server-registry"><span class="ico">▤</span>VPS Servers <span class="navbadge">REGISTRY</span></a>'
+    new_link = (
+        '<a href="/server-registry"><span class="ico">▤</span>VPS Servers <span class="navbadge">REGISTRY</span></a>'
+        '<a href="/fleet"><span class="ico">⌘</span>Multi-VPS Fleet <span class="navbadge">GROUPS</span></a>'
+    )
     html = html.replace(old_link, new_link)
     if "/security" not in html:
         marker = new_link
@@ -138,6 +145,7 @@ def vps_dashboard(server_id: int) -> str:
         f'<a class="btn" href="/vps/{server_id}/security-scan">Security Scan</a>'
         f'<a class="btn" href="/vps/{server_id}/domains">Domains & SSL</a>'
         f'<a class="btn" href="/vps/{server_id}/backups">Backups</a>'
+        f'<a class="btn" href="/vps/{server_id}/offsite-backups">Off-site</a>'
         f'<a class="btn" href="/vps/{server_id}/system-admin">System Admin</a>'
         f'<a class="btn" href="/vps/{server_id}/maintenance">Maintenance Center</a>'
         f'<a class="btn danger" href="/vps/{server_id}/docker-cleanup">Cleanup unused images</a></div>'
@@ -153,9 +161,11 @@ def vps_dashboard(server_id: int) -> str:
         f'<a class="navbtn" href="/vps/{server_id}/security-scan"><span><span class="navico">盾</span>Security Scanner</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/domains"><span><span class="navico">◎</span>Domains & SSL</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/backups"><span><span class="navico">↺</span>Backup & Restore</span></a>'
+        f'<a class="navbtn" href="/vps/{server_id}/offsite-backups"><span><span class="navico">⇱</span>Off-site Recovery</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/system-admin"><span><span class="navico">⚙</span>System Admin</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/maintenance"><span><span class="navico">◈</span>Maintenance Center</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/docker-cleanup"><span><span class="navico">⌫</span>Docker Cleanup</span></a>'
+        '<a class="navbtn" href="/fleet"><span><span class="navico">⌘</span>Multi-VPS Fleet</span></a>'
         '<a class="navbtn" href="/server-registry"><span><span class="navico">▤</span>Server Registry</span></a>'
         '<a class="navbtn" href="/security"><span><span class="navico">◆</span>Security Center</span></a>'
         '<a class="navbtn" href="/vault"><span><span class="navico">◇</span>Secrets Vault</span></a>'

@@ -7,6 +7,7 @@ intact without hiding the Linux server-management capabilities behind a secondar
 
 from fastapi.responses import HTMLResponse
 
+from app.docker_cleanup import install_docker_cleanup_routes
 from app.main import APP_ROOT, DASHBOARD_PATH, app, audit, db, server_or_404
 from app.vps import install_vps_routes
 
@@ -14,6 +15,13 @@ CONTROL_CENTER_PATH = APP_ROOT / "app" / "static" / "control-center.html"
 VPS_DASHBOARD_PATH = APP_ROOT / "app" / "static" / "vps.html"
 
 install_vps_routes(
+    app,
+    db_factory=db,
+    server_lookup=server_or_404,
+    audit_fn=audit,
+    app_root=APP_ROOT,
+)
+install_docker_cleanup_routes(
     app,
     db_factory=db,
     server_lookup=server_or_404,
@@ -48,6 +56,13 @@ def vps_dashboard(server_id: int) -> str:
     """Serve the full VPS workspace and honor direct module links such as ?section=files."""
     server_or_404(server_id)
     html = VPS_DASHBOARD_PATH.read_text(encoding="utf-8")
+    docker_toolbar = '<div class="toolbar"><button class="btn primary" onclick="loadDocker()">↻ Refresh Docker</button><button class="btn" onclick="loadDockerStorage()">Storage usage</button></div>'
+    enhanced_toolbar = (
+        '<div class="toolbar"><button class="btn primary" onclick="loadDocker()">↻ Refresh Docker</button>'
+        '<button class="btn" onclick="loadDockerStorage()">Storage usage</button>'
+        f'<a class="btn danger" href="/vps/{server_id}/docker-cleanup">Cleanup unused images</a></div>'
+    )
+    html = html.replace(docker_toolbar, enhanced_toolbar)
     deep_link = r"""
 <script id="vps-deep-link">
 (() => {

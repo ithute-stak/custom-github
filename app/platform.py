@@ -10,8 +10,8 @@ from fastapi.responses import HTMLResponse
 from app.main import APP_ROOT, DASHBOARD_PATH, app, audit, db, server_or_404
 from app.vps import install_vps_routes
 
-CONTROL_CENTER_PATH = APP_ROOT / "static" / "control-center.html"
-VPS_DASHBOARD_PATH = APP_ROOT / "static" / "vps.html"
+CONTROL_CENTER_PATH = APP_ROOT / "app" / "static" / "control-center.html"
+VPS_DASHBOARD_PATH = APP_ROOT / "app" / "static" / "vps.html"
 
 install_vps_routes(
     app,

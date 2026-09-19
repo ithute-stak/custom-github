@@ -12,6 +12,7 @@ from app.database_manager import install_database_routes
 from app.docker_cleanup import install_docker_cleanup_routes
 from app.main import APP_ROOT, DASHBOARD_PATH, app, audit, db, server_or_404
 from app.maintenance import install_maintenance_routes
+from app.server_registry import install_server_registry_routes
 from app.vps import install_vps_routes
 
 CONTROL_CENTER_PATH = APP_ROOT / "app" / "static" / "control-center.html"
@@ -40,6 +41,13 @@ install_maintenance_routes(
     app_root=APP_ROOT,
 )
 install_database_routes(
+    app,
+    db_factory=db,
+    server_lookup=server_or_404,
+    audit_fn=audit,
+    app_root=APP_ROOT,
+)
+install_server_registry_routes(
     app,
     db_factory=db,
     server_lookup=server_or_404,
@@ -161,6 +169,9 @@ _CONTAINER_INVENTORY_DASHBOARD = r"""
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def infrastructure_control_center() -> str:
     html = CONTROL_CENTER_PATH.read_text(encoding="utf-8")
+    old_link = '<a href="#fleet"><span class="ico">▤</span>VPS Servers <span class="navbadge">LIVE</span></a>'
+    new_link = '<a href="/server-registry"><span class="ico">▤</span>VPS Servers <span class="navbadge">REGISTRY</span></a>'
+    html = html.replace(old_link, new_link)
     return html.replace("</body>", _CONTAINER_INVENTORY_DASHBOARD + "\n</body>")
 
 
@@ -190,6 +201,7 @@ def vps_dashboard(server_id: int) -> str:
         f'<a class="navbtn" href="/vps/{server_id}/databases"><span><span class="navico">▦</span>Databases</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/maintenance"><span><span class="navico">◈</span>Maintenance Center</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/docker-cleanup"><span><span class="navico">⌫</span>Docker Cleanup</span></a>'
+        '<a class="navbtn" href="/server-registry"><span><span class="navico">▤</span>Server Registry</span></a>'
         '</nav>'
     )
     html = html.replace('<div class="aside-foot">', maintenance_nav + '<div class="aside-foot">', 1)

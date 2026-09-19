@@ -7,6 +7,8 @@ surfaces and keeps the individual VPS capabilities in focused modules.
 
 from fastapi.responses import HTMLResponse
 
+from app.agent_control import install_agent_routes
+from app.agent_transport import install_agent_transport_routes
 from app.applications import install_application_routes
 from app.backup_manager import install_backup_routes
 from app.container_inventory import install_container_inventory_routes
@@ -21,6 +23,8 @@ from app.maintenance import install_maintenance_routes
 from app.observability import install_observability_routes
 from app.offsite_backups import install_offsite_backup_routes
 from app.production_contract import install_production_contract_routes
+from app.production_readiness import install_readiness_routes
+from app.remote_hardening import install_remote_hardening
 from app.security import install_security_routes
 from app.security_bootstrap_guard import install_bootstrap_security_boundary
 from app.security_scanner import install_security_scanner_routes
@@ -86,9 +90,13 @@ install_security_scanner_routes(app, db_factory=db, server_lookup=server_or_404,
 install_application_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_fleet_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_vault_routes(app, db_factory=db, audit_fn=audit, data_dir=DATA_DIR)
-# Install the security middleware after all management routes are registered so one policy
-# consistently protects the full HTTP surface. It remains bootstrap-safe until an Owner exists.
+install_agent_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+install_agent_transport_routes(app, db_factory=db, audit_fn=audit)
+install_readiness_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+# Install browser security after all management routes so one RBAC policy protects the full UI/API.
+# Dedicated /auth/agent/v1 transport performs its own bearer authentication.
 install_security_routes(app, db_factory=db, audit_fn=audit)
+install_remote_hardening(app, db_factory=db)
 install_bootstrap_security_boundary(app, db)
 secure_terminal_websocket(app)
 
@@ -110,6 +118,7 @@ def infrastructure_control_center() -> str:
     new_link = (
         '<a href="/server-registry"><span class="ico">▤</span>VPS Servers <span class="navbadge">REGISTRY</span></a>'
         '<a href="/fleet"><span class="ico">⌘</span>Multi-VPS Fleet <span class="navbadge">GROUPS</span></a>'
+        '<a href="/agents"><span class="ico">◉</span>VPS Agents <span class="navbadge">LIVE</span></a>'
     )
     html = html.replace(old_link, new_link)
     if "/security" not in html:
@@ -139,6 +148,7 @@ def vps_dashboard(server_id: int) -> str:
         '<div class="toolbar"><button class="btn primary" onclick="loadDocker()">↻ Refresh Docker</button>'
         '<button class="btn" onclick="loadDockerStorage()">Storage usage</button>'
         f'<a class="btn" href="/vps/{server_id}/applications">Applications</a>'
+        f'<a class="btn" href="/vps/{server_id}/readiness">Production Readiness</a>'
         f'<a class="btn" href="/vps/{server_id}/production-contract">Production Contract</a>'
         f'<a class="btn" href="/vps/{server_id}/databases">Database Manager</a>'
         f'<a class="btn" href="/vps/{server_id}/observability">Monitoring</a>'
@@ -155,6 +165,7 @@ def vps_dashboard(server_id: int) -> str:
         '<div class="nav-title">Applications & Administration</div>'
         '<nav>'
         f'<a class="navbtn" href="/vps/{server_id}/applications"><span><span class="navico">▣</span>Applications</span></a>'
+        f'<a class="navbtn" href="/vps/{server_id}/readiness"><span><span class="navico">✓</span>Production Readiness</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/production-contract"><span><span class="navico">✓</span>Production Contract</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/databases"><span><span class="navico">▦</span>Databases</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/observability"><span><span class="navico">⌁</span>Monitoring & Incidents</span></a>'
@@ -166,6 +177,7 @@ def vps_dashboard(server_id: int) -> str:
         f'<a class="navbtn" href="/vps/{server_id}/maintenance"><span><span class="navico">◈</span>Maintenance Center</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/docker-cleanup"><span><span class="navico">⌫</span>Docker Cleanup</span></a>'
         '<a class="navbtn" href="/fleet"><span><span class="navico">⌘</span>Multi-VPS Fleet</span></a>'
+        '<a class="navbtn" href="/agents"><span><span class="navico">◉</span>VPS Agents</span></a>'
         '<a class="navbtn" href="/server-registry"><span><span class="navico">▤</span>Server Registry</span></a>'
         '<a class="navbtn" href="/security"><span><span class="navico">◆</span>Security Center</span></a>'
         '<a class="navbtn" href="/vault"><span><span class="navico">◇</span>Secrets Vault</span></a>'

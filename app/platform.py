@@ -21,6 +21,7 @@ from app.security import install_security_routes
 from app.security_bootstrap_guard import install_bootstrap_security_boundary
 from app.security_websocket import secure_terminal_websocket
 from app.server_registry import install_server_registry_routes
+from app.system_admin import install_system_admin_routes
 from app.vps import install_vps_routes
 
 CONTROL_CENTER_PATH = APP_ROOT / "app" / "static" / "control-center.html"
@@ -72,6 +73,7 @@ install_production_contract_routes(
 )
 install_domain_routes(app, server_lookup=server_or_404, audit_fn=audit)
 install_backup_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+install_system_admin_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 # Install the security middleware after all management routes are registered so one policy
 # consistently protects the full HTTP surface. It remains bootstrap-safe until an Owner exists.
 install_security_routes(app, db_factory=db, audit_fn=audit)
@@ -121,6 +123,7 @@ def vps_dashboard(server_id: int) -> str:
         f'<a class="btn" href="/vps/{server_id}/databases">Database Manager</a>'
         f'<a class="btn" href="/vps/{server_id}/domains">Domains & SSL</a>'
         f'<a class="btn" href="/vps/{server_id}/backups">Backups</a>'
+        f'<a class="btn" href="/vps/{server_id}/system-admin">System Admin</a>'
         f'<a class="btn" href="/vps/{server_id}/maintenance">Maintenance Center</a>'
         f'<a class="btn danger" href="/vps/{server_id}/docker-cleanup">Cleanup unused images</a></div>'
     )
@@ -132,6 +135,7 @@ def vps_dashboard(server_id: int) -> str:
         f'<a class="navbtn" href="/vps/{server_id}/databases"><span><span class="navico">▦</span>Databases</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/domains"><span><span class="navico">◎</span>Domains & SSL</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/backups"><span><span class="navico">↺</span>Backup & Restore</span></a>'
+        f'<a class="navbtn" href="/vps/{server_id}/system-admin"><span><span class="navico">⚙</span>System Admin</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/maintenance"><span><span class="navico">◈</span>Maintenance Center</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/docker-cleanup"><span><span class="navico">⌫</span>Docker Cleanup</span></a>'
         '<a class="navbtn" href="/server-registry"><span><span class="navico">▤</span>Server Registry</span></a>'

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -271,21 +270,27 @@ def test_close_requires_typed_confirmation(monkeypatch) -> None:
     assert any(call[0] == "PATCH" for call in FakePullAPI.calls)
 
 
-def test_platform_pull_request_routes_are_unique() -> None:
+def test_platform_pull_request_routes_are_unique_by_method_and_path() -> None:
     from app.platform import app
 
-    paths = [getattr(route, "path", "") for route in app.router.routes]
+    route_keys: list[tuple[str, str]] = []
+    for route in app.router.routes:
+        path = getattr(route, "path", "")
+        for method in (getattr(route, "methods", None) or set()):
+            route_keys.append((path, method))
+
     expected = {
-        "/github/pulls",
-        "/projects/{project_id}/github/pulls",
-        "/api/projects/{project_id}/github/pulls/capabilities",
-        "/api/projects/{project_id}/github/pulls",
-        "/api/projects/{project_id}/github/pulls/{number}/summary",
-        "/api/projects/{project_id}/github/pulls/{number}/files",
-        "/api/projects/{project_id}/github/pulls/{number}/conversation",
-        "/api/projects/{project_id}/github/pulls/{number}/checks",
-        "/api/projects/{project_id}/github/pulls/{number}/diff",
-        "/api/projects/{project_id}/github/pulls/{number}/merge",
+        ("/github/pulls", "GET"),
+        ("/projects/{project_id}/github/pulls", "GET"),
+        ("/api/projects/{project_id}/github/pulls/capabilities", "GET"),
+        ("/api/projects/{project_id}/github/pulls", "GET"),
+        ("/api/projects/{project_id}/github/pulls", "POST"),
+        ("/api/projects/{project_id}/github/pulls/{number}/summary", "GET"),
+        ("/api/projects/{project_id}/github/pulls/{number}/files", "GET"),
+        ("/api/projects/{project_id}/github/pulls/{number}/conversation", "GET"),
+        ("/api/projects/{project_id}/github/pulls/{number}/checks", "GET"),
+        ("/api/projects/{project_id}/github/pulls/{number}/diff", "GET"),
+        ("/api/projects/{project_id}/github/pulls/{number}/merge", "POST"),
     }
-    for path in expected:
-        assert paths.count(path) == 1, (path, paths.count(path))
+    for key in expected:
+        assert route_keys.count(key) == 1, (key, route_keys.count(key))

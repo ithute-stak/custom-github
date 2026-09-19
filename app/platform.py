@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse
 
 from app.docker_cleanup import install_docker_cleanup_routes
 from app.main import APP_ROOT, DASHBOARD_PATH, app, audit, db, server_or_404
+from app.maintenance import install_maintenance_routes
 from app.vps import install_vps_routes
 
 CONTROL_CENTER_PATH = APP_ROOT / "app" / "static" / "control-center.html"
@@ -22,6 +23,13 @@ install_vps_routes(
     app_root=APP_ROOT,
 )
 install_docker_cleanup_routes(
+    app,
+    db_factory=db,
+    server_lookup=server_or_404,
+    audit_fn=audit,
+    app_root=APP_ROOT,
+)
+install_maintenance_routes(
     app,
     db_factory=db,
     server_lookup=server_or_404,
@@ -60,9 +68,18 @@ def vps_dashboard(server_id: int) -> str:
     enhanced_toolbar = (
         '<div class="toolbar"><button class="btn primary" onclick="loadDocker()">↻ Refresh Docker</button>'
         '<button class="btn" onclick="loadDockerStorage()">Storage usage</button>'
+        f'<a class="btn" href="/vps/{server_id}/maintenance">Maintenance Center</a>'
         f'<a class="btn danger" href="/vps/{server_id}/docker-cleanup">Cleanup unused images</a></div>'
     )
     html = html.replace(docker_toolbar, enhanced_toolbar)
+    maintenance_nav = (
+        '<div class="nav-title">Maintenance</div>'
+        '<nav>'
+        f'<a class="navbtn" href="/vps/{server_id}/maintenance"><span><span class="navico">◈</span>Maintenance Center</span></a>'
+        f'<a class="navbtn" href="/vps/{server_id}/docker-cleanup"><span><span class="navico">⌫</span>Docker Cleanup</span></a>'
+        '</nav>'
+    )
+    html = html.replace('<div class="aside-foot">', maintenance_nav + '<div class="aside-foot">', 1)
     deep_link = r"""
 <script id="vps-deep-link">
 (() => {

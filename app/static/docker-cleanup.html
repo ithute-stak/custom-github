@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light" />
+  <title>Custom GitHub · Docker Cleanup</title>
+  <style>
+    :root{--ink:#17231f;--muted:#6f7c76;--line:#e2e8e4;--soft:#f5f8f6;--card:#fff;--brand:#183f3b;--brand2:#285b55;--accent:#d7bd5b;--green:#17844e;--amber:#b66a08;--red:#bd2f3e;--blue:#2563eb;--sidebar:#102d2b;--shadow:0 14px 44px rgba(18,50,40,.08);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    *{box-sizing:border-box}html,body{margin:0;min-height:100%;background:#f6f8f7;color:var(--ink)}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.55}a{color:inherit;text-decoration:none}code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    .app{min-height:100vh;display:grid;grid-template-columns:245px minmax(0,1fr)}aside{height:100vh;position:sticky;top:0;background:linear-gradient(180deg,#173c38,var(--sidebar));color:#eaf3ef;padding:16px 12px;display:flex;flex-direction:column}.brand{padding:7px 9px 18px;border-bottom:1px solid rgba(255,255,255,.1)}.brand b{display:block;font-size:14px}.brand small{display:block;margin-top:3px;color:rgba(234,243,239,.58);font-size:10px}.navtitle{margin:21px 10px 8px;font-size:9px;text-transform:uppercase;letter-spacing:.13em;color:rgba(234,243,239,.42);font-weight:850}.nav{display:grid;gap:4px}.nav a{padding:10px 11px;border-radius:10px;color:rgba(234,243,239,.72);font-size:12px;font-weight:720}.nav a:hover,.nav a.active{background:rgba(255,255,255,.09);color:#fff}.nav a.active{box-shadow:inset 3px 0 var(--accent)}.foot{margin-top:auto;border-top:1px solid rgba(255,255,255,.1);padding:14px 10px 4px;font-size:10px;color:rgba(234,243,239,.55)}
+    main{min-width:0}.topbar{height:68px;position:sticky;top:0;z-index:10;background:rgba(250,252,251,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,3vw,36px)}.crumb{font-size:11px;color:var(--muted)}.crumb b{color:var(--ink)}.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:white;border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800}.pill.good{color:var(--green);background:#edf9f2}.pill.warn{color:var(--amber);background:#fff7e8}
+    .stage{max-width:1500px;margin:0 auto;padding:27px clamp(18px,3vw,36px) 60px}.head{display:flex;align-items:flex-start;justify-content:space-between;gap:22px;margin-bottom:18px}.eyebrow{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:var(--brand2);font-weight:850}.head h1{font-size:clamp(1.8rem,3.2vw,2.8rem);letter-spacing:-.045em;margin:7px 0 7px}.head p{margin:0;max-width:760px;color:var(--muted);font-size:12px;line-height:1.6}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:10px 12px;font-size:11px;font-weight:760;display:inline-flex;align-items:center;justify-content:center;gap:7px;box-shadow:0 1px 2px rgba(0,0,0,.03)}.btn:hover:not(:disabled){border-color:#b9c9c0;transform:translateY(-1px)}.btn.primary{background:linear-gradient(135deg,var(--brand),var(--brand2));border-color:var(--brand);color:#fff}.btn.danger{background:#fff5f6;color:var(--red);border-color:#edcbd0}.btn.blue{background:var(--blue);color:#fff;border-color:var(--blue)}
+    .banner{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:13px;border:1px solid #dce8e1;background:#f1f8f4;margin-bottom:17px}.banner strong{font-size:11px}.banner p{font-size:10px;color:#607269;line-height:1.55;margin:3px 0 0}.shield{width:30px;height:30px;display:grid;place-items:center;border-radius:9px;background:#e2f1e8;color:var(--green);font-weight:900}
+    .grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:14px}.span3{grid-column:span 3}.span4{grid-column:span 4}.span8{grid-column:span 8}.span12{grid-column:span 12}.card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 5px 24px rgba(25,57,47,.045);overflow:hidden}.pad{padding:17px}.cardhead{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:15px 17px;border-bottom:1px solid var(--line)}.cardhead h2{font-size:13px;margin:0}.sub{font-size:10px;color:var(--muted);margin-top:3px}.metric{padding:17px}.metric span{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:820}.metric b{display:block;margin-top:7px;font-size:1.7rem;letter-spacing:-.04em}.metric small{display:block;margin-top:3px;font-size:10px;color:var(--muted)}
+    .tablewrap{overflow:auto}.table{width:100%;border-collapse:collapse;font-size:11px}.table th{background:#f8faf9;color:var(--muted);font-size:9px;text-transform:uppercase;letter-spacing:.07em;text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}.table td{padding:11px 12px;border-bottom:1px solid #edf1ef;vertical-align:middle}.table tr:last-child td{border-bottom:0}.tags{display:flex;gap:4px;flex-wrap:wrap}.tag{display:inline-flex;padding:3px 7px;border-radius:999px;background:#eef3f0;color:#52675e;font-size:9px;font-weight:780}.tag.green{background:#e8f7ef;color:#167347}.tag.amber{background:#fff4dd;color:#9a5c0e}.tag.red{background:#fdecef;color:#a72b39}.empty{padding:32px;text-align:center;color:var(--muted);font-size:11px}.skeleton{position:relative;overflow:hidden;background:#edf1ef;border-radius:7px;height:14px}.skeleton:after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,rgba(255,255,255,.65),transparent);animation:shimmer 1.2s infinite}@keyframes shimmer{100%{transform:translateX(100%)}}
+    .options{display:grid;gap:12px}.option{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:11px;background:#fafcfb}.option input{margin-top:2px}.option b{display:block;font-size:11px}.option span{display:block;margin-top:3px;color:var(--muted);font-size:10px;line-height:1.45}.select{height:36px;border:1px solid var(--line);border-radius:9px;background:#fff;padding:0 9px;font-size:11px;margin-top:8px}.pre{margin:0;min-height:145px;max-height:280px;overflow:auto;background:#101815;color:#dbe9e2;border-radius:11px;padding:13px;font:10px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap}.progressbox{display:none;margin-bottom:16px}.progressbox.show{display:block}.progressline{height:7px;background:#edf1ef;border-radius:8px;overflow:hidden;margin-top:10px}.progressline i{display:block;height:100%;background:var(--blue);width:0%;transition:width .25s}.progressmeta{display:flex;justify-content:space-between;gap:10px;margin-top:7px;font-size:10px;color:var(--muted)}.spinner{width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:currentColor;border-radius:50%;animation:spin .7s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+    .error{padding:12px;border:1px solid #f0cbd1;background:#fff4f5;color:#9e2f3b;border-radius:10px;font-size:11px}.result{padding:12px;border:1px solid #cfe6d9;background:#f0f9f4;color:#17653f;border-radius:10px;font-size:11px;line-height:1.5}.note{font-size:10px;color:var(--muted);line-height:1.5}.dangerzone{border-color:#efd3d7}.dangerzone .cardhead{background:#fff8f9}.confirmline{font-size:10px;color:var(--muted);margin-top:10px}
+    @media(max-width:1000px){.app{grid-template-columns:1fr}aside{display:none}.span3,.span4,.span8{grid-column:span 12}.head{display:block}.head .actions{margin-top:15px}.topbar{padding-left:18px;padding-right:18px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <div class="brand"><b>Custom GitHub</b><small>Linux VPS Control Plane</small></div>
+    <div class="navtitle">VPS</div>
+    <div class="nav">
+      <a id="backOverview" href="#">Overview</a>
+      <a id="backDocker" href="#">Docker</a>
+      <a class="active" href="#">Docker Cleanup</a>
+      <a id="backActivity" href="#">Activity & Events</a>
+    </div>
+    <div class="navtitle">Delivery</div>
+    <div class="nav"><a href="/deployments">CI/CD & Deployments</a><a href="/">Infrastructure Control Center</a></div>
+    <div class="foot">Unused images consume VPS disk space. Cleanup never touches Docker volumes and protects container/release images.</div>
+  </aside>
+
+  <main>
+    <div class="topbar"><div class="crumb">Custom GitHub &nbsp;›&nbsp; VPS &nbsp;›&nbsp; <b>Docker Cleanup</b></div><span id="connectionPill" class="pill">Analyzing…</span></div>
+    <div class="stage">
+      <div class="head">
+        <div><div class="eyebrow">Docker storage management</div><h1>Docker Cleanup Center</h1><p>Find Docker images that are no longer referenced by containers and safely reclaim disk space without deleting active releases, rollback images or volumes.</p></div>
+        <div class="actions"><button id="refreshBtn" class="btn" onclick="loadPreview()">↻ Re-analyze</button><a id="openDockerBtn" class="btn primary" href="#">Open Docker Manager</a></div>
+      </div>
+
+      <div class="banner"><div class="shield">✓</div><div><strong>Safe cleanup policy</strong><p>Images referenced by running or stopped containers are protected. Recent Custom GitHub deployment and rollback images are protected. Docker volumes are never pruned. If an image becomes in-use after the preview, Docker itself refuses its removal.</p></div></div>
+
+      <div id="progressBox" class="card progressbox"><div class="pad"><b id="progressTitle" style="font-size:11px">Cleanup queued</b><div class="progressline"><i id="progressBar"></i></div><div class="progressmeta"><span id="progressMessage">Waiting…</span><span id="progressPercent">0%</span></div></div></div>
+      <div id="notice" style="margin-bottom:14px"></div>
+
+      <div class="grid">
+        <div class="card span3 metric"><span>Total images</span><b id="totalImages">—</b><small>Unique image IDs on this VPS</small></div>
+        <div class="card span3 metric"><span>Protected</span><b id="protectedImages">—</b><small>Containers + deployment rollback safety</small></div>
+        <div class="card span3 metric"><span>Cleanup candidates</span><b id="candidateImages">—</b><small>Not referenced and safe to attempt removal</small></div>
+        <div class="card span3 metric"><span>Estimated reclaimable</span><b id="reclaimable">—</b><small>May be lower because Docker layers are shared</small></div>
+
+        <div class="card span8">
+          <div class="cardhead"><div><h2>Unused image candidates</h2><div class="sub">These images are not referenced by any container and are not protected by deployment history.</div></div><span id="candidateBadge" class="tag">—</span></div>
+          <div class="tablewrap"><table class="table"><thead><tr><th>Image / tags</th><th>Image ID</th><th>Size</th><th>Created</th></tr></thead><tbody id="candidateRows"></tbody></table></div>
+        </div>
+
+        <div class="card span4 dangerzone">
+          <div class="cardhead"><div><h2>Cleanup options</h2><div class="sub">Destructive actions require confirmation.</div></div></div>
+          <div class="pad options">
+            <div class="option"><input type="checkbox" checked disabled><div><b>Remove unused images</b><span>Only the candidates shown in the preview are attempted. No force removal is used.</span></div></div>
+            <label class="option"><input id="buildCacheCheck" type="checkbox"><div><b>Also clean old build cache</b><span>Build cache is not required to run existing containers. Keep recent cache for faster local rebuilds.</span><select id="cacheAge" class="select"><option value="24">Older than 24 hours</option><option value="72">Older than 3 days</option><option value="168" selected>Older than 7 days</option><option value="720">Older than 30 days</option></select></div></label>
+            <button id="cleanupBtn" class="btn danger" onclick="runCleanup()">Delete unused Docker data</button>
+            <div class="confirmline">Volumes are excluded. Running containers are never stopped.</div>
+          </div>
+        </div>
+
+        <div class="card span8">
+          <div class="cardhead"><div><h2>Protected images</h2><div class="sub">These remain untouched by cleanup.</div></div><span id="protectedBadge" class="tag green">—</span></div>
+          <div class="tablewrap"><table class="table"><thead><tr><th>Image / tags</th><th>Reason</th><th>Size</th></tr></thead><tbody id="protectedRows"></tbody></table></div>
+        </div>
+
+        <div class="card span4"><div class="cardhead"><div><h2>Docker storage</h2><div class="sub">Live output from docker system df.</div></div></div><div class="pad"><pre id="systemDf" class="pre">Loading…</pre></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+<script>
+const serverId=Number(location.pathname.match(/\/vps\/(\d+)\/docker-cleanup/)?.[1]||0);let analysis=null;let pollTimer=null;
+const $=id=>document.getElementById(id);const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const bytes=n=>{n=Number(n||0);if(n<1024)return `${n} B`;const u=['KB','MB','GB','TB'];let i=-1;do{n/=1024;i++}while(n>=1024&&i<u.length-1);return `${n.toFixed(n>=10?1:2)} ${u[i]}`};
+async function api(path,options={}){const r=await fetch(path,{headers:{'Content-Type':'application/json',...(options.headers||{})},...options});const t=await r.text();let d=t;try{d=t?JSON.parse(t):null}catch{}if(!r.ok)throw new Error(d?.detail||d?.message||t||`HTTP ${r.status}`);return d}
+function skeleton(rows=5){return Array.from({length:rows},()=>'<tr><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td><td><div class="skeleton"></div></td></tr>').join('')}
+function links(){['backOverview','backDocker','openDockerBtn','backActivity'].forEach(()=>{});$('backOverview').href=`/vps/${serverId}?section=overview`;$('backDocker').href=`/vps/${serverId}?section=docker`;$('openDockerBtn').href=`/vps/${serverId}?section=docker`;$('backActivity').href=`/vps/${serverId}?section=activity`}
+function imageName(item){const tags=item.tags||[];return tags.length?tags.map(t=>`<span class="tag">${esc(t)}</span>`).join(' '):'<span class="tag amber">untagged image</span>'}
+function render(data){analysis=data;$('totalImages').textContent=data.total_images;$('protectedImages').textContent=data.protected_images;$('candidateImages').textContent=data.candidate_images;$('reclaimable').textContent=bytes(data.estimated_reclaimable_bytes);$('candidateBadge').textContent=`${data.candidate_images} candidates`;$('protectedBadge').textContent=`${data.protected_images} protected`;$('systemDf').textContent=data.system_df||'No Docker storage report available.';$('candidateRows').innerHTML=data.candidates.length?data.candidates.map(i=>`<tr><td><div class="tags">${imageName(i)}</div></td><td class="mono">${esc(String(i.id).replace('sha256:','').slice(0,18))}</td><td>${bytes(i.size_bytes)}</td><td>${esc(i.created_at||'—')}</td></tr>`).join(''):'<tr><td colspan="4"><div class="empty">No unused image candidates. This VPS is already clean.</div></td></tr>';$('protectedRows').innerHTML=data.protected.length?data.protected.map(i=>`<tr><td><div class="tags">${imageName(i)}</div><div class="sub mono">${esc(String(i.id).replace('sha256:','').slice(0,18))}</div></td><td>${(i.protection_reasons||[]).map(r=>`<span class="tag green">${esc(r)}</span>`).join(' ')}</td><td>${bytes(i.size_bytes)}</td></tr>`).join(''):'<tr><td colspan="3"><div class="empty">No protected images reported.</div></td></tr>';$('cleanupBtn').disabled=data.candidate_images===0&&!$('buildCacheCheck').checked;$('connectionPill').className='pill good';$('connectionPill').textContent='● Analysis ready'}
+async function loadPreview(){if(!serverId)return;$('candidateRows').innerHTML=skeleton();$('protectedRows').innerHTML=skeleton();$('connectionPill').className='pill warn';$('connectionPill').textContent='Analyzing…';$('notice').innerHTML='';try{render(await api(`/api/vps/servers/${serverId}/docker/cleanup/preview`))}catch(e){$('connectionPill').className='pill warn';$('connectionPill').textContent='Analysis failed';$('notice').innerHTML=`<div class="error">${esc(e.message)}</div>`}}
+$('buildCacheCheck').addEventListener('change',()=>{if(analysis)$('cleanupBtn').disabled=analysis.candidate_images===0&&!$('buildCacheCheck').checked});
+async function runCleanup(){if(!analysis)return;const cache=$('buildCacheCheck').checked;const count=analysis.candidate_images;const msg=`Delete ${count} unused Docker image(s)${cache?' and old build cache':''}?\n\nRunning/stopped container images, deployment rollback images and volumes will be protected.`;if(!confirm(msg))return;$('cleanupBtn').disabled=true;$('progressBox').classList.add('show');$('progressTitle').textContent='Docker cleanup';$('progressBar').style.width='0%';$('progressPercent').textContent='0%';$('progressMessage').textContent='Queueing cleanup…';$('notice').innerHTML='';try{const r=await api(`/api/vps/servers/${serverId}/docker/cleanup`,{method:'POST',body:JSON.stringify({confirm:true,clean_build_cache:cache,build_cache_older_than_hours:Number($('cacheAge').value)})});pollOperation(r.operation_id)}catch(e){$('cleanupBtn').disabled=false;$('notice').innerHTML=`<div class="error">${esc(e.message)}</div>`}}
+async function pollOperation(id){clearTimeout(pollTimer);try{const op=await api(`/api/vps/operations/${id}`);const p=Number(op.progress||0);$('progressBar').style.width=`${p}%`;$('progressPercent').textContent=`${p}%`;$('progressMessage').textContent=op.message||op.status;if(op.status==='success'){$('notice').innerHTML=`<div class="result"><b>Cleanup complete.</b> ${esc(op.message||'')} The Docker inventory has been re-analyzed.</div>`;$('cleanupBtn').disabled=false;await loadPreview();return}if(op.status==='failed'){$('notice').innerHTML=`<div class="error"><b>Cleanup failed.</b> ${esc(op.error||op.message||'Unknown error')}</div>`;$('cleanupBtn').disabled=false;return}pollTimer=setTimeout(()=>pollOperation(id),1000)}catch(e){$('notice').innerHTML=`<div class="error">${esc(e.message)}</div>`;$('cleanupBtn').disabled=false}}
+links();loadPreview();
+</script>
+</body>
+</html>

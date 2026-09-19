@@ -18,6 +18,7 @@ from app.main import APP_ROOT, DASHBOARD_PATH, app, audit, db, server_or_404
 from app.maintenance import install_maintenance_routes
 from app.production_contract import install_production_contract_routes
 from app.security import install_security_routes
+from app.security_bootstrap_guard import install_bootstrap_security_boundary
 from app.security_websocket import secure_terminal_websocket
 from app.server_registry import install_server_registry_routes
 from app.vps import install_vps_routes
@@ -74,6 +75,7 @@ install_backup_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=
 # Install the security middleware after all management routes are registered so one policy
 # consistently protects the full HTTP surface. It remains bootstrap-safe until an Owner exists.
 install_security_routes(app, db_factory=db, audit_fn=audit)
+install_bootstrap_security_boundary(app, db)
 secure_terminal_websocket(app)
 
 # The base module originally owns GET /. VPS management also installs GET /vps/{server_id}.

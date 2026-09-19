@@ -202,7 +202,7 @@ find "$path" -mindepth 1 -maxdepth 1 -print0 2>/dev/null | \
     fi
     if [ "$rc" -eq 124 ]; then status=timeout; bytes=0
     else
-      bytes=${output%%$'"'"'\\t'"'"'*}
+      bytes=$(printf "%s\\n" "$output" | cut -f1)
       case "$bytes" in ""|*[!0-9]*) status=unavailable; bytes=0 ;; *) status=ok ;; esac
     fi
     encoded=$(printf "%s" "$item" | base64 -w0)

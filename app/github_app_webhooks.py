@@ -172,11 +172,6 @@ def github_auth_mode() -> str:
 
 
 def resolve_github_token(owner: str | None = None, repo: str | None = None) -> str | None:
-    """Prefer a short-lived GitHub App token and fall back to a configured PAT.
-
-    A broken App setup never exposes credentials in the returned status. If a PAT exists it
-    is used as a break-glass fallback; otherwise public-repository reads can remain anonymous.
-    """
     if github_app_configured():
         try:
             return _APP_AUTH.installation_token(owner, repo)
@@ -201,6 +196,7 @@ def github_integration_status() -> dict[str, Any]:
         "private_key_permissions_secure": key_secure,
         "pat_fallback_configured": github_pat_configured(),
         "webhook_configured": github_webhook_configured(),
+        "webhook_path": "/auth/github/webhook",
         "actions_write_enabled": _truthy(os.getenv("CUSTOM_GITHUB_GITHUB_ACTIONS_WRITE")),
         "last_app_auth_error": _APP_AUTH.last_error,
     }
@@ -316,8 +312,7 @@ def install_github_app_webhook_routes(
             ).fetchall()
         return [dict(row) for row in rows]
 
-    @app.post("/webhooks/github")
-    async def github_webhook(request: FastAPIRequest) -> dict[str, Any]:
+    async def receive_webhook(request: FastAPIRequest) -> dict[str, Any]:
         secret = os.getenv("CUSTOM_GITHUB_GITHUB_WEBHOOK_SECRET", "").strip()
         if not secret:
             raise HTTPException(status_code=503, detail="GitHub webhook secret is not configured")
@@ -373,6 +368,14 @@ def install_github_app_webhook_routes(
         )
         await EVENT_HUB.publish(summary)
         return {"ok": True, "duplicate": False, "delivery_id": delivery_id, "project_id": project_id}
+
+    @app.post("/auth/github/webhook")
+    async def github_webhook_ingress(request: FastAPIRequest) -> dict[str, Any]:
+        return await receive_webhook(request)
+
+    @app.post("/webhooks/github")
+    async def github_webhook_compat(request: FastAPIRequest) -> dict[str, Any]:
+        return await receive_webhook(request)
 
     @app.websocket("/ws/github/events")
     async def github_events(websocket: WebSocket) -> None:

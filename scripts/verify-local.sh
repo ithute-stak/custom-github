@@ -40,7 +40,9 @@ python -m compileall -q app tests
 printf 'Python compile: OK\n'
 
 say "Running control-plane test suite"
-python -m pytest -q
+# Runtime repository clones live under data/workspaces and may contain their own
+# test suites and dependency graphs. Only the control plane's tests belong here.
+python -m pytest -q tests
 
 say "Checking local Git identity/auth readiness"
 if git config --global user.email >/dev/null 2>&1; then

@@ -1,76 +1,170 @@
 # Custom GitHub
 
-A local-first CI/CD and controlled deployment platform.
+Custom GitHub is a local-first Linux infrastructure, CI/CD, deployment and VPS operations control plane.
 
-GitHub remains the source of truth for repositories. This project runs on the operator's PC, synchronizes selected GitHub repositories, executes CI pipelines locally, builds immutable Docker images locally, checks production VPS capacity, and only enables **Deploy Latest** for the exact latest commit when its required checks have passed.
+GitHub remains the source of truth for repositories. Custom GitHub synchronizes repositories, runs verification, builds immutable Docker images away from production, deploys tested releases, manages Linux VPS infrastructure, monitors health, protects secrets, verifies backups and can optionally use a restricted VPS Agent for continuous telemetry and structured operations.
 
-## Core rule
+## Core production rules
 
-Production VPS servers do **not** build source code.
+1. Production VPS servers do **not** build application source.
+2. Releases are tied to exact Git commit SHAs.
+3. Production receives pre-built images and activates them with Docker Compose `--no-build`.
+4. Existing production `.env` files are not replaced by deployment.
+5. Destructive infrastructure operations require explicit confirmation and are audited.
+6. Docker volumes are not removed by routine cleanup.
+7. The browser control plane stays on loopback; remote access is provided through an HTTPS reverse proxy.
+8. SSH remains the break-glass recovery channel even when VPS Agents are enrolled.
 
-They receive pre-built, tested Docker images from the local control plane and activate them with Docker Compose using `--no-build`.
+## Major capabilities
 
-## Current flow
+### CI/CD and releases
 
-1. Register a GitHub repository.
-2. Sync/fetch its latest branch commit locally.
-3. Run the local pipeline.
-4. Build a Docker image tagged to the exact commit SHA.
-5. Mark that exact commit green only when every required step passes.
-6. Register a production VPS and SSH identity path.
-7. Configure the project's Compose directory/service, health URL and resource requirements.
-8. Enable **Deploy Latest** only when the latest GitHub SHA has a green Docker image and a deployment target.
-9. Check VPS disk, memory, Docker and Compose availability.
-10. Stream the already-built image directly to the VPS over SSH.
-11. Generate a tiny Compose override containing only the selected immutable image.
-12. Activate it with `docker compose ... up -d --no-build`.
-13. Health-check the application.
-14. Automatically roll back to the previous image if the health check fails.
-15. Keep the current and immediate previous project images while removing older images for that project only.
+- GitHub repository registration and synchronization
+- clone-once/fetch-later local workspaces
+- Node, Python, .NET and Docker pipeline detection
+- exact commit-SHA pipeline history
+- immutable project/SHA Docker images
+- latest-green deployment gate
+- VPS capacity checks before deployment
+- direct `docker save | ssh docker load` image transfer
+- Compose override activation with `--no-build`
+- health checks and automatic rollback
+- current + previous release retention
+- deployment, operation and audit history
 
-## Implemented
+### VPS management
 
-- Local browser dashboard.
-- SQLite state database.
-- GitHub repository registration and synchronization.
-- Clone-once/fetch-later local workspaces.
-- Basic automatic pipeline detection for Node, Python, .NET and Docker projects.
-- Exact commit-SHA pipeline history.
-- Docker image tags tied to project + commit SHA.
-- Hard latest-green deployment gate.
-- Production VPS registry.
-- SSH identity-path configuration without storing private key contents.
-- Live VPS capacity checks.
-- Per-project deployment targets.
-- Disk and memory deployment thresholds.
-- Minimum free RAM/disk requirements per project.
-- One active deployment per VPS.
-- Background deployment execution.
-- Direct `docker save | ssh docker load` image streaming.
-- Docker Compose activation with a generated override and `--no-build`.
-- Existing production `.env` files remain untouched.
-- Repeated HTTP health verification.
-- Automatic rollback on failed deployment health.
-- Project-scoped Docker image retention.
-- Deployment history and logs.
-- Audit-event history.
-- Local verification script and safety-focused regression tests.
+- live CPU, RAM, disk, uptime and Docker state
+- file manager with List/Tile views and live folder disk usage
+- protected create/edit/move/permission/delete operations
+- Docker containers, images, logs, storage and cleanup
+- systemd service management
+- process management
+- journal/system logs
+- network/listening-port inspection
+- interactive SSH terminal
+- database manager for PostgreSQL/PostGIS, MySQL and MariaDB
+- package/OS update management
+- Linux users, sudo groups and SSH public keys
+- UFW firewall administration
+- managed cron jobs
 
-## Verify the local machine first
+### Production applications
 
-Before starting the dashboard or connecting any VPS, run:
+LoanHub and Ithute have application-aware dashboards built from the production Docker contract.
+
+- LoanHub: 5 expected long-running services
+- Ithute: 22 expected long-running services
+- live service/image state
+- expected vs missing/stopped/wrong-image containers
+- aggregate container resources
+- deployment and backup context
+- guarded application restart
+- non-approved workload detection
+
+### Security
+
+- Owner bootstrap
+- authenticated sessions
+- RBAC: Owner, Admin, Developer, Operator, Viewer
+- TOTP MFA
+- same-origin/CSRF controls
+- protected terminal WebSocket access
+- Security Center
+- encrypted Secrets Vault using Fernet authenticated encryption
+- vault master key stored separately from SQLite
+- live VPS security scanner
+- effective SSH-policy checks
+- privileged-container and Docker-socket exposure checks
+- public database/cache port checks
+- Fail2ban management
+- unattended-upgrades and unsafe `/etc` permission checks
+
+### Monitoring and incidents
+
+- live CPU from `/proc/stat`
+- live memory from `/proc/meminfo`
+- root disk from `df`
+- load average
+- network counters
+- Docker running/total and restart state
+- failed systemd services
+- reboot-required state
+- timestamped metric history
+- configurable alert thresholds
+- persistent incidents with `new -> acknowledged -> resolved`
+- automatic incident resolution when the live condition clears
+
+### Backup and disaster recovery
+
+- profile-based path backups
+- Docker-volume backups
+- PostgreSQL/PostGIS dumps
+- MySQL/MariaDB dumps
+- manifests and retention
+- component-level restore with typed confirmation
+- off-site SSH/rsync targets
+- post-transfer byte verification
+- off-site retention constrained to Custom-GitHub-owned target paths
+- recovery drill that verifies every artifact in the latest successful manifest with `tar -tzf`, `gzip -t` or non-empty-file verification
+- Production Readiness page combining security, MFA, backup freshness, recovery drill, off-site copy, incidents, VPS Agent and live production-contract evidence
+
+### Multi-VPS Fleet
+
+- named server groups
+- concurrent live fleet health/capacity inspection
+- aggregate RAM/disk/container/service state
+- guarded group service restart
+- connectivity-critical SSH/network/firewall services blocked from fleet restart
+
+## VPS Agent
+
+The optional VPS Agent is a restricted execution plane for continuous management.
+
+It uses:
+
+- one-time enrollment tokens
+- long-lived random agent tokens stored only as SHA-256 hashes in the control-plane database
+- agent-side credential state with mode `0600`
+- HTTPS-only control-plane communication except loopback development
+- periodic live telemetry
+- structured command queue
+
+The initial command allowlist is deliberately small:
+
+```text
+agent.ping
+service.start
+service.stop
+service.restart
+container.start
+container.stop
+container.restart
+```
+
+SSH, networking and firewall services are blocked from Agent service actions. The Agent does not accept arbitrary shell commands.
+
+Install it on a VPS from the repository checkout with:
+
+```bash
+sudo bash agent/install.sh https://control.example.com <one-time-enrollment-token>
+```
+
+Create the one-time token from **VPS Agents** in the control plane.
+
+## Verify locally
+
+Before starting or pulling production infrastructure into the workflow:
 
 ```bash
 bash scripts/verify-local.sh
 ```
 
-This verifies the required local tools, Docker daemon access, Python compilation and the control-plane test suite.
+This verifies required tools, Docker access, Python compilation, shell scripts and the regression suite.
 
-Only continue to production configuration when this command is green.
+## Local mode
 
-## Run locally
-
-Native mode is recommended because the local control plane needs access to your existing Git credentials, Docker daemon, runtimes and SSH keys.
+Local mode is the default and safest starting point:
 
 ```bash
 bash scripts/start-local.sh
@@ -82,119 +176,62 @@ Open:
 http://127.0.0.1:8787
 ```
 
-Before registering private repositories, make sure normal Git HTTPS access to GitHub already works on the PC, for example through your existing Git credential helper or GitHub CLI authentication.
+The local launcher deliberately binds only to `127.0.0.1`.
 
-## Local runner requirements
+## Remote production control-plane mode
 
-Install the tools required by the repositories you intend to test:
+Do not bind Uvicorn directly to the public internet.
 
-- `git`
-- Node.js / npm for Node or Next.js projects
-- Python for Python projects
-- .NET SDK for .NET projects
-- Docker for image builds and image export
-- OpenSSH client for production deployment
+Remote mode requires:
 
-The current runner executes repository commands directly on the local PC. A later hardening stage will isolate builds in dedicated runner containers or VMs.
+- an existing bootstrapped Owner
+- authentication enabled
+- at least one Owner/Admin with MFA enabled
+- an HTTPS public URL
+- an HTTPS reverse proxy
+- explicit trusted hostnames
 
-## Production VPS requirements
-
-The controlled deployment worker expects:
-
-- Linux VPS
-- SSH access using a dedicated deployment user/key
-- Docker Engine
-- Docker Compose v2
-- a pre-existing production Compose directory
-- an application Compose file already present there
-- no requirement to build application source on the VPS
-- a health endpoint reachable from the control-plane PC
-
-See [`docs/DEPLOYMENT_CONTRACT.md`](docs/DEPLOYMENT_CONTRACT.md) before connecting a production server.
-
-## Compose override design
-
-Your existing application Compose configuration can stay intact. Custom GitHub writes only:
-
-```text
-.custom-github.override.yaml
-.custom-github.release
-```
-
-For example, the generated override is equivalent to:
-
-```yaml
-services:
-  app:
-    image: custom-github/loanhub:0123456789ab
-```
-
-Then the controller activates it with:
+Example environment:
 
 ```bash
-docker compose \
-  -f compose.yaml \
-  -f .custom-github.override.yaml \
-  up -d --no-build app
+export CUSTOM_GITHUB_PUBLIC_URL=https://control.example.com
+export CUSTOM_GITHUB_TRUSTED_HOSTS=control.example.com
+export CUSTOM_GITHUB_FORWARDED_ALLOW_IPS=127.0.0.1
+bash scripts/start-production.sh
 ```
 
-This means Custom GitHub can change the deployed image without replacing the application's normal `.env` file.
+`start-production.sh` still binds Uvicorn to `127.0.0.1`. Your reverse proxy terminates HTTPS and forwards to the loopback listener.
 
-## Disk-protection policy
+Remote mode refuses startup if security, an active Owner or privileged MFA are missing.
 
-The platform does **not** call broad destructive commands such as `docker system prune -a --volumes` during deployment.
+## Production-readiness workflow
 
-After a successful release it only considers tags belonging to the exact project repository, for example:
+For each production VPS:
 
-```text
-custom-github/loanhub:aaaaaaaaaaaa
-custom-github/loanhub:bbbbbbbbbbbb
-custom-github/loanhub:cccccccccccc
-```
+1. Verify the local control plane with `scripts/verify-local.sh`.
+2. Create the Owner account and enable MFA.
+3. Run the VPS Security Scanner.
+4. Verify the application production contract.
+5. Create a local backup profile and complete a successful backup.
+6. Configure and test an off-site target.
+7. Sync a successful backup off-site.
+8. Run **Production Readiness -> Verify latest backup**.
+9. Resolve critical incidents.
+10. Optionally enroll the VPS Agent.
+11. Require the Production Readiness page to show no failed checks before treating the recovery posture as complete.
 
-It retains:
+## Deployment contract
 
-- the currently deployed image;
-- the immediate previous rollback image.
+See [`docs/DEPLOYMENT_CONTRACT.md`](docs/DEPLOYMENT_CONTRACT.md) before connecting production infrastructure.
 
-Older images for that project are removed when Docker says they are safe to remove. Volumes and unrelated application images are never targeted by this retention step.
+The platform never intentionally replaces a production `.env` during release activation and never performs broad `docker system prune -a --volumes` cleanup as part of deployment.
 
-## Deployment states
+## Current trust boundaries
 
-```text
-queued
-preflight
-transferring
-deploying
-health-check
-success
-failed
-rolled-back
-rollback-failed
-```
+Custom GitHub is powerful infrastructure software. A user with sufficient RBAC permissions can modify files, databases, containers and services on registered servers. Keep the control plane itself patched and backed up, protect the vault master key separately, retain emergency SSH access, and keep at least one verified off-site backup outside the production VPS.
 
-A deployment marked `rolled-back` means the attempted release failed but the previous release was restored and passed its health check.
-
-A deployment marked `rollback-failed` requires operator attention.
-
-## Important security boundary
-
-Keep the dashboard bound to localhost (`127.0.0.1`) until authentication and CSRF protection are implemented.
-
-Do not use a personal/root SSH key for automated deployment. Use a dedicated deployment key and read the Docker privilege warning in the deployment contract.
-
-## Still to harden before broad production use
-
-- isolated build runners instead of executing project code in the API process;
-- manual rollback button and release browser;
-- backup hooks before database/schema migrations;
-- encrypted secret management;
-- authentication/authorization;
-- live streaming logs and job cancellation;
-- signed artifact provenance;
-- dedicated restricted deployment agent/rootless container runtime;
-- queue controls for multiple runner machines.
+The current VPS Agent is intentionally narrower than SSH. Expanding Agent privileges should be done by adding structured, validated operations rather than arbitrary command execution.
 
 ## Development branch
 
-The current implementation is developed under `feature/control-plane-mvp` and is reviewed through PR #1 before merging into `main`.
+The complete control-plane implementation is developed on `feature/control-plane-mvp` and remains reviewed through PR #1 before final merge to `main`.

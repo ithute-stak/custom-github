@@ -22,6 +22,7 @@ from app.file_manager_enhancements import FILE_MANAGER_ENHANCEMENT, install_file
 from app.fleet import install_fleet_routes
 from app.github_actions_live import GitHubActionsAPI, install_github_actions_routes
 from app.github_app_webhooks import install_github_app_webhook_routes, resolve_github_token
+from app.github_event_ui import install_github_event_ui
 from app.github_operations import GitHubAPI, install_github_operations_routes
 from app.main import (
     APP_ROOT,
@@ -84,6 +85,7 @@ install_github_actions_routes(
     audit_fn=audit,
     api_factory=lambda: GitHubActionsAPI(token=resolve_github_token()),
 )
+install_github_event_ui(app)
 install_vps_routes(
     app,
     db_factory=db,
@@ -162,7 +164,7 @@ install_reliability_routes(
 )
 install_reliability_index(app, db_factory=db)
 # Install browser security after all management routes so one RBAC policy protects the full UI/API.
-# Dedicated /auth/agent/v1 transport performs its own bearer authentication.
+# Dedicated /auth/agent/v1 transport and /auth/github/webhook perform their own authentication.
 install_security_routes(app, db_factory=db, audit_fn=audit)
 install_remote_hardening(app, db_factory=db)
 install_bootstrap_security_boundary(app, db)

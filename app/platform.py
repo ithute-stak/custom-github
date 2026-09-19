@@ -63,6 +63,9 @@ db = make_db_factory(DB_PATH)
 # app.main's helper functions resolve their module-level db global at call time. Replacing it
 # here moves core repository/deployment routes and every composed module onto the same backend.
 main_module.db = db
+# Feature modules create tables with foreign keys to core projects/servers. Initialize the core
+# schema immediately after selecting the backend so a brand-new PostgreSQL schema is composable.
+main_module.init_db()
 
 install_vps_routes(
     app,

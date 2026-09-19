@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import os
 import posixpath
-import shlex
 import sqlite3
-from collections import Counter, defaultdict
+from collections import Counter
 from typing import Any, Callable
 
 from fastapi import FastAPI, HTTPException
@@ -186,7 +184,12 @@ def install_container_inventory_routes(
         command = r"""
 docker ps --no-trunc --format '{{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Label "com.docker.compose.project"}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project.working_dir"}}\t{{.Status}}\t{{.Ports}}'
 """.strip()
-        code, output = ssh_command(server, command, timeout=45)
+        try:
+            code, output = ssh_command(server, command, timeout=45)
+        except RuntimeError as exc:
+            # Configuration failures (for example a stale identity_file path) are
+            # expected operational errors, not application crashes.
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
         if code != 0:
             raise HTTPException(status_code=502, detail=output.strip()[-4000:] or "Unable to inspect Docker containers")
         with db_factory() as connection:

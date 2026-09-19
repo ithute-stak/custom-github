@@ -20,8 +20,10 @@ from app.docker_cleanup import install_docker_cleanup_routes
 from app.domain_manager import install_domain_routes
 from app.file_manager_enhancements import FILE_MANAGER_ENHANCEMENT, install_file_manager_enhancements_routes
 from app.fleet import install_fleet_routes
-from app.github_actions_live import install_github_actions_routes
-from app.github_operations import install_github_operations_routes
+from app.github_actions_live import GitHubActionsAPI, install_github_actions_routes
+from app.github_app_webhooks import install_github_app_webhook_routes, resolve_github_token
+from app.github_event_ui import install_github_event_ui
+from app.github_operations import GitHubAPI, install_github_operations_routes
 from app.main import (
     APP_ROOT,
     DASHBOARD_PATH,
@@ -69,17 +71,21 @@ main_module.db = db
 # schema immediately after selecting the backend so a brand-new PostgreSQL schema is composable.
 main_module.init_db()
 
+install_github_app_webhook_routes(app, db_factory=db, audit_fn=audit)
 install_github_operations_routes(
     app,
     db_factory=db,
     project_lookup=project_or_404,
     audit_fn=audit,
+    api_factory=lambda: GitHubAPI(token=resolve_github_token()),
 )
 install_github_actions_routes(
     app,
     project_lookup=project_or_404,
     audit_fn=audit,
+    api_factory=lambda: GitHubActionsAPI(token=resolve_github_token()),
 )
+install_github_event_ui(app)
 install_vps_routes(
     app,
     db_factory=db,
@@ -158,7 +164,7 @@ install_reliability_routes(
 )
 install_reliability_index(app, db_factory=db)
 # Install browser security after all management routes so one RBAC policy protects the full UI/API.
-# Dedicated /auth/agent/v1 transport performs its own bearer authentication.
+# Dedicated /auth/agent/v1 transport and /auth/github/webhook perform their own authentication.
 install_security_routes(app, db_factory=db, audit_fn=audit)
 install_remote_hardening(app, db_factory=db)
 install_bootstrap_security_boundary(app, db)

@@ -17,6 +17,20 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: custom_github_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d custom_github_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,4 +58,5 @@ jobs:
         env:
           CUSTOM_GITHUB_DATA_DIR: /tmp/custom-github-ci-data
           CUSTOM_GITHUB_WORKSPACE_ROOT: /tmp/custom-github-ci-workspaces
+          CUSTOM_GITHUB_TEST_POSTGRES_DSN: postgresql://postgres:postgres@127.0.0.1:5432/custom_github_test
         run: python -m pytest -q tests

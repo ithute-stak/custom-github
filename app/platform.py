@@ -5,6 +5,7 @@ page is the VPS-first infrastructure control center. This module composes the ma
 surfaces and keeps the individual VPS capabilities in focused modules.
 """
 
+import app.main as main_module
 from fastapi.responses import HTMLResponse
 
 from app.agent_control import install_agent_routes
@@ -13,6 +14,7 @@ from app.applications import install_application_routes
 from app.backup_manager import install_backup_routes
 from app.container_inventory import install_container_inventory_routes
 from app.container_inventory_ui import CONTAINER_INVENTORY_DASHBOARD
+from app.control_db import make_db_factory
 from app.database_manager import install_database_routes
 from app.docker_cleanup import install_docker_cleanup_routes
 from app.domain_manager import install_domain_routes
@@ -22,9 +24,9 @@ from app.main import (
     APP_ROOT,
     DASHBOARD_PATH,
     DATA_DIR,
+    DB_PATH,
     app,
     audit,
-    db,
     detect_pipeline,
     git_sha,
     project_or_404,
@@ -54,6 +56,16 @@ from app.vps import install_vps_routes
 
 CONTROL_CENTER_PATH = APP_ROOT / "app" / "static" / "control-center.html"
 VPS_DASHBOARD_PATH = APP_ROOT / "app" / "static" / "vps.html"
+
+# The default remains SQLite. PostgreSQL is selected only through environment configuration
+# and only after the verified migration/empty-schema gate in make_db_factory() succeeds.
+db = make_db_factory(DB_PATH)
+# app.main's helper functions resolve their module-level db global at call time. Replacing it
+# here moves core repository/deployment routes and every composed module onto the same backend.
+main_module.db = db
+# Feature modules create tables with foreign keys to core projects/servers. Initialize the core
+# schema immediately after selecting the backend so a brand-new PostgreSQL schema is composable.
+main_module.init_db()
 
 install_vps_routes(
     app,
@@ -150,6 +162,15 @@ for route in list(app.router.routes):
         app.router.routes.remove(route)
 
 
+@app.get("/api/control-plane/database")
+def control_database_status() -> dict[str, str]:
+    """Expose backend identity without exposing database credentials."""
+    return {
+        "backend": str(getattr(db, "backend", "sqlite")),
+        "location": str(getattr(db, "location", DB_PATH)),
+    }
+
+
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
 def infrastructure_control_center() -> str:
     html = CONTROL_CENTER_PATH.read_text(encoding="utf-8")
@@ -169,7 +190,13 @@ def infrastructure_control_center() -> str:
             + '<a href="/vault"><span class="ico">◆</span>Secrets Vault <span class="navbadge">ENCRYPTED</span></a>'
         )
         html = html.replace(marker, security_link, 1)
-    return html.replace("</body>", CONTAINER_INVENTORY_DASHBOARD + "\n</body>")
+    backend_badge = (
+        "<div style='position:fixed;right:18px;bottom:18px;z-index:50;background:#173c38;color:white;"
+        "padding:8px 12px;border-radius:999px;font:700 11px system-ui'>CONTROL DB · "
+        + str(getattr(db, "backend", "sqlite")).upper()
+        + "</div>"
+    )
+    return html.replace("</body>", CONTAINER_INVENTORY_DASHBOARD + backend_badge + "\n</body>")
 
 
 @app.get("/deployments", response_class=HTMLResponse, include_in_schema=False)

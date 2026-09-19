@@ -16,6 +16,7 @@ from app.domain_manager import install_domain_routes
 from app.file_manager_enhancements import FILE_MANAGER_ENHANCEMENT, install_file_manager_enhancements_routes
 from app.main import APP_ROOT, DASHBOARD_PATH, app, audit, db, server_or_404
 from app.maintenance import install_maintenance_routes
+from app.observability import install_observability_routes
 from app.production_contract import install_production_contract_routes
 from app.security import install_security_routes
 from app.security_bootstrap_guard import install_bootstrap_security_boundary
@@ -74,6 +75,7 @@ install_production_contract_routes(
 install_domain_routes(app, server_lookup=server_or_404, audit_fn=audit)
 install_backup_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_system_admin_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+install_observability_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 # Install the security middleware after all management routes are registered so one policy
 # consistently protects the full HTTP surface. It remains bootstrap-safe until an Owner exists.
 install_security_routes(app, db_factory=db, audit_fn=audit)
@@ -121,6 +123,7 @@ def vps_dashboard(server_id: int) -> str:
         '<button class="btn" onclick="loadDockerStorage()">Storage usage</button>'
         f'<a class="btn" href="/vps/{server_id}/production-contract">Production Contract</a>'
         f'<a class="btn" href="/vps/{server_id}/databases">Database Manager</a>'
+        f'<a class="btn" href="/vps/{server_id}/observability">Monitoring</a>'
         f'<a class="btn" href="/vps/{server_id}/domains">Domains & SSL</a>'
         f'<a class="btn" href="/vps/{server_id}/backups">Backups</a>'
         f'<a class="btn" href="/vps/{server_id}/system-admin">System Admin</a>'
@@ -133,6 +136,7 @@ def vps_dashboard(server_id: int) -> str:
         '<nav>'
         f'<a class="navbtn" href="/vps/{server_id}/production-contract"><span><span class="navico">✓</span>Production Contract</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/databases"><span><span class="navico">▦</span>Databases</span></a>'
+        f'<a class="navbtn" href="/vps/{server_id}/observability"><span><span class="navico">⌁</span>Monitoring & Incidents</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/domains"><span><span class="navico">◎</span>Domains & SSL</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/backups"><span><span class="navico">↺</span>Backup & Restore</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/system-admin"><span><span class="navico">⚙</span>System Admin</span></a>'

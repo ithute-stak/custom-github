@@ -53,6 +53,7 @@ jobs:
         run: |
           bash -n scripts/start-local.sh
           bash -n scripts/verify-local.sh
+          bash -n scripts/cutover-control-db-to-postgres.sh
 
       - name: Run regression tests
         env:

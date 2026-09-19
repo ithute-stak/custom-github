@@ -18,13 +18,30 @@ from app.docker_cleanup import install_docker_cleanup_routes
 from app.domain_manager import install_domain_routes
 from app.file_manager_enhancements import FILE_MANAGER_ENHANCEMENT, install_file_manager_enhancements_routes
 from app.fleet import install_fleet_routes
-from app.main import APP_ROOT, DASHBOARD_PATH, DATA_DIR, app, audit, db, server_or_404
+from app.main import (
+    APP_ROOT,
+    DASHBOARD_PATH,
+    DATA_DIR,
+    app,
+    audit,
+    db,
+    detect_pipeline,
+    git_sha,
+    project_or_404,
+    run_deployment_task,
+    server_or_404,
+    sync_project,
+    utc_now,
+)
 from app.maintenance import install_maintenance_routes
 from app.observability import install_observability_routes
 from app.offsite_backups import install_offsite_backup_routes
+from app.pipeline_isolation import install_isolated_pipeline_route
 from app.privilege_bridge import install_privilege_bridge
 from app.production_contract import install_production_contract_routes
 from app.production_readiness import install_readiness_routes
+from app.reliability_center import install_reliability_routes
+from app.reliability_index import install_reliability_index
 from app.remote_hardening import install_remote_hardening
 from app.security import install_security_routes
 from app.security_bootstrap_guard import install_bootstrap_security_boundary
@@ -95,6 +112,26 @@ install_vault_routes(app, db_factory=db, audit_fn=audit, data_dir=DATA_DIR)
 install_agent_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_agent_transport_routes(app, db_factory=db, audit_fn=audit)
 install_readiness_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+install_isolated_pipeline_route(
+    app,
+    db_factory=db,
+    project_lookup=project_or_404,
+    sync_fn=sync_project,
+    git_sha_fn=git_sha,
+    detect_pipeline_fn=detect_pipeline,
+    audit_fn=audit,
+    runs_root=DATA_DIR / "runner-workspaces",
+    utc_now_fn=utc_now,
+)
+install_reliability_routes(
+    app,
+    db_factory=db,
+    project_lookup=project_or_404,
+    server_lookup=server_or_404,
+    audit_fn=audit,
+    deployment_runner=run_deployment_task,
+)
+install_reliability_index(app, db_factory=db)
 # Install browser security after all management routes so one RBAC policy protects the full UI/API.
 # Dedicated /auth/agent/v1 transport performs its own bearer authentication.
 install_security_routes(app, db_factory=db, audit_fn=audit)
@@ -121,6 +158,7 @@ def infrastructure_control_center() -> str:
         '<a href="/server-registry"><span class="ico">▤</span>VPS Servers <span class="navbadge">REGISTRY</span></a>'
         '<a href="/fleet"><span class="ico">⌘</span>Multi-VPS Fleet <span class="navbadge">GROUPS</span></a>'
         '<a href="/agents"><span class="ico">◉</span>VPS Agents <span class="navbadge">LIVE</span></a>'
+        '<a href="/reliability"><span class="ico">↺</span>Reliability Center <span class="navbadge">RELEASES</span></a>'
     )
     html = html.replace(old_link, new_link)
     if "/security" not in html:
@@ -151,6 +189,7 @@ def vps_dashboard(server_id: int) -> str:
         '<button class="btn" onclick="loadDockerStorage()">Storage usage</button>'
         f'<a class="btn" href="/vps/{server_id}/applications">Applications</a>'
         f'<a class="btn" href="/vps/{server_id}/readiness">Production Readiness</a>'
+        '<a class="btn" href="/reliability">Release & DR</a>'
         f'<a class="btn" href="/vps/{server_id}/production-contract">Production Contract</a>'
         f'<a class="btn" href="/vps/{server_id}/databases">Database Manager</a>'
         f'<a class="btn" href="/vps/{server_id}/observability">Monitoring</a>'
@@ -168,6 +207,7 @@ def vps_dashboard(server_id: int) -> str:
         '<nav>'
         f'<a class="navbtn" href="/vps/{server_id}/applications"><span><span class="navico">▣</span>Applications</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/readiness"><span><span class="navico">✓</span>Production Readiness</span></a>'
+        '<a class="navbtn" href="/reliability"><span><span class="navico">↺</span>Release / Drift / DR</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/production-contract"><span><span class="navico">✓</span>Production Contract</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/databases"><span><span class="navico">▦</span>Databases</span></a>'
         f'<a class="navbtn" href="/vps/{server_id}/observability"><span><span class="navico">⌁</span>Monitoring & Incidents</span></a>'

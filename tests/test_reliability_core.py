@@ -28,20 +28,24 @@ def test_legacy_pipeline_route_is_replaced_once() -> None:
     assert "POST" in (getattr(routes[0], "methods", None) or set())
 
 
-def test_reliability_routes_are_unique() -> None:
-    paths = [getattr(route, "path", "") for route in platform_app.router.routes]
+def test_reliability_routes_are_unique_by_method_and_path() -> None:
+    routes = list(platform_app.router.routes)
     expected = {
-        "/reliability",
-        "/projects/{project_id}/reliability",
-        "/api/projects/{project_id}/releases",
-        "/api/projects/{project_id}/releases/{pipeline_id}/rollback",
-        "/api/projects/{project_id}/drift",
-        "/api/projects/{project_id}/drift/baseline",
-        "/api/projects/{project_id}/dr-rehearsals",
+        ("GET", "/reliability"),
+        ("GET", "/projects/{project_id}/reliability"),
+        ("GET", "/api/projects/{project_id}/releases"),
+        ("POST", "/api/projects/{project_id}/releases/{pipeline_id}/rollback"),
+        ("GET", "/api/projects/{project_id}/drift"),
+        ("POST", "/api/projects/{project_id}/drift/baseline"),
+        ("GET", "/api/projects/{project_id}/dr-rehearsals"),
+        ("POST", "/api/projects/{project_id}/dr-rehearsals"),
     }
-    assert expected.issubset(set(paths))
-    for path in expected:
-        assert paths.count(path) == 1
+    for method, path in expected:
+        matches = [
+            route for route in routes
+            if getattr(route, "path", "") == path and method in (getattr(route, "methods", None) or set())
+        ]
+        assert len(matches) == 1, (method, path, matches)
 
 
 def test_postgres_migration_is_dry_run_by_default(tmp_path: Path) -> None:

@@ -1,0 +1,46 @@
+name: Verify control plane
+
+on:
+  push:
+    branches:
+      - feature/vps-control-center
+  pull_request:
+    branches:
+      - feature/control-plane-mvp
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Compile Python
+        run: python -m compileall -q app tests
+
+      - name: Validate shell scripts
+        run: |
+          bash -n scripts/start-local.sh
+          bash -n scripts/verify-local.sh
+
+      - name: Run regression tests
+        env:
+          CUSTOM_GITHUB_DATA_DIR: /tmp/custom-github-ci-data
+          CUSTOM_GITHUB_WORKSPACE_ROOT: /tmp/custom-github-ci-workspaces
+        run: python -m pytest -q

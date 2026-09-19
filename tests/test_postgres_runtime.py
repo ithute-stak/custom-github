@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import subprocess
+import sys
+import tempfile
+import textwrap
 import uuid
+from pathlib import Path
 
 import psycopg
 import pytest
@@ -16,6 +21,12 @@ pytestmark = pytest.mark.skipif(not DSN, reason="PostgreSQL CI service is not co
 
 def _schema() -> str:
     return "cg_test_" + uuid.uuid4().hex[:12]
+
+
+def _drop(schema: str) -> None:
+    with psycopg.connect(DSN, autocommit=True) as raw:
+        with raw.cursor() as cur:
+            cur.execute(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE')
 
 
 def test_compat_row_supports_sqlite_style_access() -> None:
@@ -82,6 +93,52 @@ def test_postgres_compat_executes_core_sqlite_patterns() -> None:
             # A mapped integrity error must not poison the rest of the transaction.
             assert connection.execute("SELECT COUNT(*) AS c FROM child").fetchone()["c"] == 1
     finally:
-        with psycopg.connect(DSN, autocommit=True) as raw:
-            with raw.cursor() as cur:
-                cur.execute(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE')
+        _drop(schema)
+
+
+def test_full_platform_boots_and_writes_against_postgres() -> None:
+    schema = _schema()
+    data_dir = Path(tempfile.mkdtemp(prefix="cg-postgres-runtime-"))
+    code = textwrap.dedent(
+        """
+        from fastapi.testclient import TestClient
+        from app.platform import app
+
+        with TestClient(app) as client:
+            status = client.get('/api/control-plane/database')
+            assert status.status_code == 200, status.text
+            assert status.json()['backend'] == 'postgres'
+            created = client.post('/api/projects', json={
+                'name': 'pg-smoke',
+                'github_url': 'https://github.com/ithute-stak/pg-smoke.git',
+                'branch': 'main',
+            })
+            assert created.status_code == 201, created.text
+            projects = client.get('/api/projects')
+            assert projects.status_code == 200, projects.text
+            assert any(p['name'] == 'pg-smoke' for p in projects.json())
+        """
+    )
+    env = {
+        **os.environ,
+        "CUSTOM_GITHUB_DB_BACKEND": "postgres",
+        "CUSTOM_GITHUB_POSTGRES_DSN": DSN,
+        "CUSTOM_GITHUB_POSTGRES_SCHEMA": schema,
+        "CUSTOM_GITHUB_POSTGRES_ALLOW_EMPTY": "1",
+        "CUSTOM_GITHUB_DATA_DIR": str(data_dir),
+        "CUSTOM_GITHUB_WORKSPACE_ROOT": str(data_dir / "workspaces"),
+    }
+    try:
+        completed = subprocess.run(
+            [sys.executable, "-c", code],
+            cwd=Path(__file__).resolve().parents[1],
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=120,
+            check=False,
+        )
+        assert completed.returncode == 0, completed.stdout
+    finally:
+        _drop(schema)

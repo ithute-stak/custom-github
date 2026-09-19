@@ -5,6 +5,8 @@ from typing import Any
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 
+from app.github_app_webhooks import github_auth_mode, github_integration_status
+
 
 LIVE_EVENT_SCRIPT = r"""
 <script id="github-webhook-live-events">
@@ -45,24 +47,45 @@ LIVE_EVENT_SCRIPT = r"""
 
 
 def install_github_event_ui(app: FastAPI) -> None:
-    """Wrap the existing project Actions page with webhook/WebSocket live refresh."""
-    target = "/projects/{project_id}/github/actions"
-    endpoint: Any | None = None
+    """Add webhook-driven refresh and App-aware capability reporting to Actions."""
+    page_target = "/projects/{project_id}/github/actions"
+    page_endpoint: Any | None = None
     for route in list(app.router.routes):
         methods = getattr(route, "methods", None) or set()
-        if getattr(route, "path", None) == target and "GET" in methods:
-            endpoint = route.endpoint
+        if getattr(route, "path", None) == page_target and "GET" in methods:
+            page_endpoint = route.endpoint
             app.router.routes.remove(route)
             break
-    if endpoint is None:
-        return
 
-    @app.get(target, response_class=HTMLResponse, include_in_schema=False)
-    def webhook_live_actions_page(project_id: int) -> str:
-        html = endpoint(project_id)
-        if not isinstance(html, str):
-            return html
-        return html.replace("</body>", LIVE_EVENT_SCRIPT + "\n</body>")
+    if page_endpoint is not None:
+        @app.get(page_target, response_class=HTMLResponse, include_in_schema=False)
+        def webhook_live_actions_page(project_id: int) -> str:
+            html = page_endpoint(project_id)
+            if not isinstance(html, str):
+                return html
+            return html.replace("</body>", LIVE_EVENT_SCRIPT + "\n</body>")
+
+    capability_target = "/api/projects/{project_id}/github/actions/capabilities"
+    capability_endpoint: Any | None = None
+    for route in list(app.router.routes):
+        methods = getattr(route, "methods", None) or set()
+        if getattr(route, "path", None) == capability_target and "GET" in methods:
+            capability_endpoint = route.endpoint
+            app.router.routes.remove(route)
+            break
+
+    if capability_endpoint is not None:
+        @app.get(capability_target)
+        def app_aware_actions_capabilities(project_id: int) -> dict[str, Any]:
+            payload = dict(capability_endpoint(project_id))
+            integration = github_integration_status()
+            authenticated = github_auth_mode() != "anonymous"
+            payload["authenticated"] = authenticated
+            payload["auth_mode"] = integration["auth_mode"]
+            payload["write_enabled"] = bool(authenticated and integration["actions_write_enabled"])
+            payload["webhook_configured"] = bool(integration["webhook_configured"])
+            payload["webhook_live_updates"] = bool(integration["webhook_configured"])
+            return payload
 
 
 __all__ = ["LIVE_EVENT_SCRIPT", "install_github_event_ui"]

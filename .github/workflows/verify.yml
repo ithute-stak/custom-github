@@ -3,7 +3,8 @@ name: Verify control plane
 on:
   push:
     branches:
-      - feature/vps-control-center
+      - feature/control-plane-mvp
+      - main
   pull_request:
     branches:
       - feature/control-plane-mvp
@@ -43,4 +44,4 @@ jobs:
         env:
           CUSTOM_GITHUB_DATA_DIR: /tmp/custom-github-ci-data
           CUSTOM_GITHUB_WORKSPACE_ROOT: /tmp/custom-github-ci-workspaces
-        run: python -m pytest -q
+        run: python -m pytest -q tests

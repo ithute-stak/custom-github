@@ -22,6 +22,7 @@ from app.main import APP_ROOT, DASHBOARD_PATH, DATA_DIR, app, audit, db, server_
 from app.maintenance import install_maintenance_routes
 from app.observability import install_observability_routes
 from app.offsite_backups import install_offsite_backup_routes
+from app.privilege_bridge import install_privilege_bridge
 from app.production_contract import install_production_contract_routes
 from app.production_readiness import install_readiness_routes
 from app.remote_hardening import install_remote_hardening
@@ -85,6 +86,7 @@ install_domain_routes(app, server_lookup=server_or_404, audit_fn=audit)
 install_backup_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_offsite_backup_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_system_admin_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
+install_privilege_bridge(app, server_lookup=server_or_404)
 install_observability_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_security_scanner_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)
 install_application_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=audit)

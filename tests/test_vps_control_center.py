@@ -98,14 +98,21 @@ def test_platform_entrypoint_is_used_by_local_start_script() -> None:
     assert "--host 127.0.0.1" in script
 
 
-def test_main_dashboard_links_registered_servers_to_vps_manager() -> None:
+def test_main_dashboard_is_vps_first_and_keeps_deployment_center() -> None:
     server_id = ensure_server()
     with TestClient(app) as client:
         response = client.get("/")
+        deployment_response = client.get("/deployments")
     assert response.status_code == 200
-    assert "vps-manager-dashboard-enhancement" in response.text
+    assert "Infrastructure Control Center" in response.text
+    assert "Linux VPS management" in response.text
+    assert "File Manager" in response.text
+    assert "Terminal" in response.text
+    assert "Docker" in response.text
     assert "Open VPS Manager" in response.text
-    assert f"/vps/${{match[1]}}" in response.text
+    assert "?section=" in response.text
+    assert deployment_response.status_code == 200
+    assert "Deploy Latest" in deployment_response.text
     assert server_id > 0
 
 
@@ -113,6 +120,7 @@ def test_management_routes_remain_local_first() -> None:
     assert os.environ.get("CUSTOM_GITHUB_DATA_DIR")
     route_paths = {getattr(route, "path", "") for route in app.router.routes}
     assert "/vps/{server_id}" in route_paths
+    assert "/deployments" in route_paths
     assert "/api/vps/servers/{server_id}/files" in route_paths
     assert "/api/vps/servers/{server_id}/docker/containers" in route_paths
     assert "/api/vps/servers/{server_id}/services" in route_paths

@@ -20,6 +20,7 @@ from app.docker_cleanup import install_docker_cleanup_routes
 from app.domain_manager import install_domain_routes
 from app.file_manager_enhancements import FILE_MANAGER_ENHANCEMENT, install_file_manager_enhancements_routes
 from app.fleet import install_fleet_routes
+from app.github_actions_live import install_github_actions_routes
 from app.github_operations import install_github_operations_routes
 from app.main import (
     APP_ROOT,
@@ -71,6 +72,11 @@ main_module.init_db()
 install_github_operations_routes(
     app,
     db_factory=db,
+    project_lookup=project_or_404,
+    audit_fn=audit,
+)
+install_github_actions_routes(
+    app,
     project_lookup=project_or_404,
     audit_fn=audit,
 )
@@ -187,6 +193,7 @@ def infrastructure_control_center() -> str:
         '<a href="/fleet"><span class="ico">⌘</span>Multi-VPS Fleet <span class="navbadge">GROUPS</span></a>'
         '<a href="/agents"><span class="ico">◉</span>VPS Agents <span class="navbadge">LIVE</span></a>'
         '<a href="/github"><span class="ico">⌘</span>GitHub Operations <span class="navbadge">SOURCE</span></a>'
+        '<a href="/github/actions"><span class="ico">▶</span>GitHub Actions <span class="navbadge">LIVE</span></a>'
         '<a href="/reliability"><span class="ico">↺</span>Reliability Center <span class="navbadge">RELEASES</span></a>'
     )
     html = html.replace(old_link, new_link)
@@ -255,6 +262,8 @@ def vps_dashboard(server_id: int) -> str:
         f'<a class="navbtn" href="/vps/{server_id}/docker-cleanup"><span><span class="navico">⌫</span>Docker Cleanup</span></a>'
         '<a class="navbtn" href="/fleet"><span><span class="navico">⌘</span>Multi-VPS Fleet</span></a>'
         '<a class="navbtn" href="/agents"><span><span class="navico">◉</span>VPS Agents</span></a>'
+        '<a class="navbtn" href="/github"><span><span class="navico">⌘</span>GitHub Operations</span></a>'
+        '<a class="navbtn" href="/github/actions"><span><span class="navico">▶</span>GitHub Actions</span></a>'
         '<a class="navbtn" href="/server-registry"><span><span class="navico">▤</span>Server Registry</span></a>'
         '<a class="navbtn" href="/security"><span><span class="navico">◆</span>Security Center</span></a>'
         '<a class="navbtn" href="/vault"><span><span class="navico">◇</span>Secrets Vault</span></a>'

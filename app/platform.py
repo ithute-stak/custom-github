@@ -18,6 +18,7 @@ from app.main import APP_ROOT, DASHBOARD_PATH, app, audit, db, server_or_404
 from app.maintenance import install_maintenance_routes
 from app.production_contract import install_production_contract_routes
 from app.security import install_security_routes
+from app.security_websocket import secure_terminal_websocket
 from app.server_registry import install_server_registry_routes
 from app.vps import install_vps_routes
 
@@ -73,6 +74,7 @@ install_backup_routes(app, db_factory=db, server_lookup=server_or_404, audit_fn=
 # Install the security middleware after all management routes are registered so one policy
 # consistently protects the full HTTP surface. It remains bootstrap-safe until an Owner exists.
 install_security_routes(app, db_factory=db, audit_fn=audit)
+secure_terminal_websocket(app)
 
 # The base module originally owns GET /. VPS management also installs GET /vps/{server_id}.
 # Replace only those two HTML routes here; API and WebSocket routes remain untouched.
@@ -91,8 +93,6 @@ def infrastructure_control_center() -> str:
     old_link = '<a href="#fleet"><span class="ico">▤</span>VPS Servers <span class="navbadge">LIVE</span></a>'
     new_link = '<a href="/server-registry"><span class="ico">▤</span>VPS Servers <span class="navbadge">REGISTRY</span></a>'
     html = html.replace(old_link, new_link)
-    # Put security in the global control-plane navigation without coupling the base dashboard
-    # to the security module's implementation.
     if "/security" not in html:
         marker = new_link
         security_link = marker + '<a href="/security"><span class="ico">◈</span>Security Center <span class="navbadge">RBAC</span></a>'

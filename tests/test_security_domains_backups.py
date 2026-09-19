@@ -1,5 +1,6 @@
 import pytest
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
 from app.backup_manager import BackupProfileCreate, _path
 from app.domain_manager import _domain, _upstream
@@ -57,6 +58,23 @@ def test_backup_profile_requires_valid_source_shapes() -> None:
     assert profile.retention_count == 7
     with pytest.raises(Exception):
         BackupProfileCreate(name="bad", paths=["/opt/app"], volumes=["bad volume"])
+
+
+def test_prebootstrap_security_mutations_are_blocked() -> None:
+    with TestClient(app) as client:
+        state = client.get("/auth/status").json()
+        assert state["users"] == 0
+        response = client.post(
+            "/api/security/users",
+            json={
+                "username": "bypass",
+                "display_name": "Should Not Exist",
+                "password": "this-is-a-long-password",
+                "role": "owner",
+            },
+        )
+        assert response.status_code == 409
+        assert "bootstrap" in response.json()["detail"].lower()
 
 
 def test_expansion_routes_are_registered_once() -> None:

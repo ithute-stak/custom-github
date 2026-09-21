@@ -22,6 +22,7 @@ from app.file_manager_enhancements import FILE_MANAGER_ENHANCEMENT, install_file
 from app.fleet import install_fleet_routes
 from app.github_actions_live import GitHubActionsAPI, install_github_actions_routes
 from app.github_app_webhooks import install_github_app_webhook_routes, resolve_github_token
+from app.github_code_governance import GitHubRepoAPI, install_github_code_governance_routes
 from app.github_event_ui import install_github_event_ui
 from app.github_operations import GitHubAPI, install_github_operations_routes
 from app.github_pull_requests import GitHubPullAPI, install_github_pull_request_routes
@@ -91,6 +92,12 @@ install_github_pull_request_routes(
     project_lookup=project_or_404,
     audit_fn=audit,
     api_factory=lambda: GitHubPullAPI(token=resolve_github_token()),
+)
+install_github_code_governance_routes(
+    app,
+    project_lookup=project_or_404,
+    audit_fn=audit,
+    api_factory=lambda: GitHubRepoAPI(token=resolve_github_token()),
 )
 install_github_event_ui(app)
 install_vps_routes(
@@ -206,6 +213,7 @@ def infrastructure_control_center() -> str:
         '<a href="/fleet"><span class="ico">⌘</span>Multi-VPS Fleet <span class="navbadge">GROUPS</span></a>'
         '<a href="/agents"><span class="ico">◉</span>VPS Agents <span class="navbadge">LIVE</span></a>'
         '<a href="/github"><span class="ico">⌘</span>GitHub Operations <span class="navbadge">SOURCE</span></a>'
+        '<a href="/github/code"><span class="ico">&lt;/&gt;</span>GitHub Code <span class="navbadge">BROWSE</span></a>'
         '<a href="/github/pulls"><span class="ico">⎇</span>Pull Request Center <span class="navbadge">REVIEW</span></a>'
         '<a href="/github/actions"><span class="ico">▶</span>GitHub Actions <span class="navbadge">LIVE</span></a>'
         '<a href="/reliability"><span class="ico">↺</span>Reliability Center <span class="navbadge">RELEASES</span></a>'
@@ -277,6 +285,7 @@ def vps_dashboard(server_id: int) -> str:
         '<a class="navbtn" href="/fleet"><span><span class="navico">⌘</span>Multi-VPS Fleet</span></a>'
         '<a class="navbtn" href="/agents"><span><span class="navico">◉</span>VPS Agents</span></a>'
         '<a class="navbtn" href="/github"><span><span class="navico">⌘</span>GitHub Operations</span></a>'
+        '<a class="navbtn" href="/github/code"><span><span class="navico">&lt;/&gt;</span>GitHub Code</span></a>'
         '<a class="navbtn" href="/github/pulls"><span><span class="navico">⎇</span>Pull Request Center</span></a>'
         '<a class="navbtn" href="/github/actions"><span><span class="navico">▶</span>GitHub Actions</span></a>'
         '<a class="navbtn" href="/server-registry"><span><span class="navico">▤</span>Server Registry</span></a>'

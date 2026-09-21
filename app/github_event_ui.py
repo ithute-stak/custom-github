@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse
 
 from app.github_admin_center import install_github_admin_routes
 from app.github_app_webhooks import github_auth_mode, github_integration_status
+from app.github_secret_write import install_github_secret_routes
 
 
 LIVE_EVENT_SCRIPT = r"""
@@ -60,12 +61,11 @@ def _replace_get_page(app: FastAPI, path: str, wrapper: Any) -> None:
 
 
 def install_github_event_ui(app: FastAPI) -> None:
-    """Add webhook refresh, App-aware Actions status, and GitHub admin navigation."""
+    """Add webhook refresh, App-aware Actions status, GitHub admin, and secret management."""
     from app.main import audit, project_or_404
 
-    # Admin/security routes are composed here so platform.py stays focused and all routes are
-    # still installed before the global browser security middleware is added.
     install_github_admin_routes(app, project_lookup=project_or_404, audit_fn=audit)
+    install_github_secret_routes(app, project_lookup=project_or_404, audit_fn=audit)
 
     page_target = "/projects/{project_id}/github/actions"
     page_endpoint: Any | None = None
@@ -112,8 +112,8 @@ def install_github_event_ui(app: FastAPI) -> None:
             html = endpoint()
             if not isinstance(html, str):
                 return html
-            link = "<a class='btn' href='/github/admin'>Administration & Security</a> "
-            if "/github/admin" in html:
+            link = "<a class='btn' href='/github/admin'>Administration & Security</a> <a class='btn' href='/github/secrets'>Secrets</a> "
+            if "/github/secrets" in html:
                 return html
             return html.replace("<a class='btn' href='/'>Infrastructure</a>", link + "<a class='btn' href='/'>Infrastructure</a>")
 
@@ -125,8 +125,11 @@ def install_github_event_ui(app: FastAPI) -> None:
             html = endpoint(project_id)
             if not isinstance(html, str):
                 return html
-            link = f"<a class='btn' href='/projects/{project_id}/github/admin'>Admin & Security</a> "
-            if "/github/admin" in html:
+            link = (
+                f"<a class='btn' href='/projects/{project_id}/github/admin'>Admin & Security</a> "
+                f"<a class='btn' href='/projects/{project_id}/github/secrets'>Secrets</a> "
+            )
+            if "/github/secrets" in html:
                 return html
             return html.replace("<a class='btn' href='/github'>All repositories</a>", link + "<a class='btn' href='/github'>All repositories</a>")
 
